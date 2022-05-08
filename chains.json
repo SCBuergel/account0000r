@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ethereum Main Net",
+    "api": "https://rpc.ankr.com/eth"
+  },
+  {
+    "name": "Gnosis Chain",
+    "api": "https://rpc.ankr.com/gnosis"
+  },
+  {
+    "name": "BNB Smart Chain",
+    "api": "https://rpc.ankr.com/bsc"
+  },
+  {
+    "name": "Polygon",
+    "api": "https://rpc.ankr.com/polygon"
+  },
+  { 
+    "name": "Arbitrum",
+    "api": "https://rpc.ankr.com/arbitrum"
+  },
+  { 
+    "name": "Optimism",
+    "api": "https://mainnet.optimism.io"
+  }
+]
