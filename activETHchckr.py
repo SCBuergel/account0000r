@@ -38,40 +38,54 @@ which use a storage format of accounts that's consistent:
 """
 
 
+def accountsFromSecrets(secrets, hdPath="m/44'/60'/0'/0", numAccounts=10):
+
+    accounts = [] # we will populate this and then return it
+
+    for s in secrets:
+        MNEMONIC = s["mnemonic"]
+        PASSPHRASE = s["passphrase"]
+        bip44_hdwallet: BIP44HDWallet = BIP44HDWallet(cryptocurrency=EthereumMainnet)
+        # Get Ethereum BIP44HDWallet from mnemonic
+        bip44_hdwallet.from_mnemonic(
+            mnemonic=MNEMONIC, language="english", passphrase=PASSPHRASE
+        )
+
+        # split the string hdPath into its elements and skip the first "m" element
+        pathElements = hdPath.split("/")[1:]
+        for elem in pathElements:
+            # remove a potentially trailing "'"
+            numElem = elem.split("'")[0]
+            bip44_hdwallet.from_index(int(numElem), hardened=(elem.endswith("'")))
+
+        print("Mnemonic:", bip44_hdwallet.mnemonic())
+
+        # Get Ethereum BIP44HDWallet information's from address index
+
+        for address_index in range(numAccounts):
+            bip44_hdwallet.clean_derivation()
+            # Derivation from Ethereum BIP44 derivation path
+            bip44_derivation: BIP44Derivation = BIP44Derivation(
+                cryptocurrency=EthereumMainnet, account=0, change=False, address=address_index
+            )
+            # Drive Ethereum BIP44HDWallet
+            bip44_hdwallet.from_path(path=bip44_derivation)
+            # Print address_index, path, address and private_key
+            print(f"({address_index}) {bip44_hdwallet.path()} {bip44_hdwallet.address()} 0x{bip44_hdwallet.private_key()}")
+            accounts.append({
+                "address": bip44_hdwallet.address(),
+                "index": address_index,
+                "use": "",
+                "mnemonic": "",
+                "chains": {}
+            })
+        return accounts
+
+
 secrets = json.load(open("secrets.json"))
 print(json.dumps(secrets, indent=2))
-MNEMONIC = secrets[0]["mnemonic"]
-PASSPHRASE = secrets[0]["passphrase"]
-bip44_hdwallet: BIP44HDWallet = BIP44HDWallet(cryptocurrency=EthereumMainnet)
-# Get Ethereum BIP44HDWallet from mnemonic
-bip44_hdwallet.from_mnemonic(
-    mnemonic=MNEMONIC, language="english", passphrase=PASSPHRASE
-)
-bip44_hdwallet.from_index(44, hardened=True)
-bip44_hdwallet.from_index(60, hardened=True)
-bip44_hdwallet.from_index(0, hardened=True)
-bip44_hdwallet.from_index(0)
-bip44_hdwallet.from_index(0)
-
-# Clean default BIP44 derivation indexes/paths
-bip44_hdwallet.clean_derivation()
-
-print("Mnemonic:", bip44_hdwallet.mnemonic())
-print("Base HD Path:  m/44'/60'/0'/0/{address_index}", "\n")
-
-# Get Ethereum BIP44HDWallet information's from address index
-for address_index in range(10):
-    # Derivation from Ethereum BIP44 derivation path
-    bip44_derivation: BIP44Derivation = BIP44Derivation(
-        cryptocurrency=EthereumMainnet, account=0, change=False, address=address_index
-    )
-    # Drive Ethereum BIP44HDWallet
-    bip44_hdwallet.from_path(path=bip44_derivation)
-    # Print address_index, path, address and private_key
-    print(f"({address_index}) {bip44_hdwallet.path()} {bip44_hdwallet.address()} 0x{bip44_hdwallet.private_key()}")
-    # Clean derivation indexes/paths
-    bip44_hdwallet.clean_derivation()
-
+accounts = accountsFromSecrets(secrets)
+print(accounts)
 
 accounts = json.load(open("accounts.json"))
 # print(json.dumps(accounts, indent=2))
