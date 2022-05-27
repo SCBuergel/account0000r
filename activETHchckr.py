@@ -1,6 +1,7 @@
 from web3 import Web3
 import json
 import sys
+from datetime import datetime
 
 from hdwallet import BIP44HDWallet
 from hdwallet.cryptocurrencies import EthereumMainnet
@@ -9,38 +10,10 @@ from hdwallet.utils import generate_mnemonic
 from typing import Optional
 #pip install hdwallet
 
-# TODO:
-"""
-create separate functions for
-# createAccountsFromMnemonics
-# storeAccounts
-# loadAccounts
-# analyzeAccounts
 
-which use a storage format of accounts that's consistent:
-[{
-  "account": "0x0000000000000000000000000000000000001337",
-  "use": "manual edits here",
-  "mnemonic": "description of mnemonic",
-  "path": "m/44'/60'/0'/0/123"
-  "activeOnChains": [
-    {
-      "name": "EthereumMainNet",
-      "balance": 0.1,
-      "nonce": 12
-    },
-    {
-      "name": "Polygon",
-      "balance": 12.3,
-      "nonce": 42
-    }]
-}]
-"""
-
-
-def accountsFromSecrets(secrets, hdPath="m/44'/60'/0'/0", numAccounts=10):
-
-    accounts = [] # we will populate this and then return it
+# optionally an existing accounts list can be passed
+# existing elements in the list are not overwritten
+def accountsFromSecrets(secrets, accounts=[], hdPath="m/44'/60'/0'/0", numAccounts=10):
 
     for s in secrets:
         MNEMONIC = s["mnemonic"]
@@ -58,10 +31,7 @@ def accountsFromSecrets(secrets, hdPath="m/44'/60'/0'/0", numAccounts=10):
             numElem = elem.split("'")[0]
             bip44_hdwallet.from_index(int(numElem), hardened=(elem.endswith("'")))
 
-        print("Mnemonic:", bip44_hdwallet.mnemonic())
-
         # Get Ethereum BIP44HDWallet information's from address index
-
         for address_index in range(numAccounts):
             bip44_hdwallet.clean_derivation()
             # Derivation from Ethereum BIP44 derivation path
@@ -71,39 +41,50 @@ def accountsFromSecrets(secrets, hdPath="m/44'/60'/0'/0", numAccounts=10):
             # Drive Ethereum BIP44HDWallet
             bip44_hdwallet.from_path(path=bip44_derivation)
             # Print address_index, path, address and private_key
-            print(f"({address_index}) {bip44_hdwallet.path()} {bip44_hdwallet.address()} 0x{bip44_hdwallet.private_key()}")
-            accounts.append({
-                "address": bip44_hdwallet.address(),
-                "index": address_index,
-                "use": "",
-                "mnemonic": "",
-                "chains": {}
-            })
-        return accounts
+            # print(f"({address_index}) {bip44_hdwallet.path()} {bip44_hdwallet.address()} 0x{bip44_hdwallet.private_key()}")
+            address = bip44_hdwallet.address()
+
+            # only append new entry if it's not on the account list already
+            if not any(i["address"]==address for i in accounts):
+                accounts.append({
+                    "address": address,
+                    "index": address_index,
+                    "use": "",
+                    "mnemonic": s["description"],
+                    "chains": []
+                })
+    return accounts
+
+
+
+# this will create or overwrite the file
+def storeAccounts(accounts, accountFileName="accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
+    file = open(accountFileName, "w")
+    prettyAccounts = json.dumps(accounts, indent=2)
+    file.write(prettyAccounts)
+    file.close()
+
+
+
+def analyzeAccounts(accounts, chainsFileName="chains.json"):
+    chains = json.load(open("chains.json"))
+    for c in chains:
+        web3 = Web3(Web3.HTTPProvider(c["api"]))
+        for a in range(len(accounts)):
+            address = accounts[a]["address"]
+            balance = web3.eth.getBalance(address)/1e18
+            nonce = web3.eth.getTransactionCount(address)
+            if balance > 0 or nonce > 0:
+                accounts[a]["chains"].append({
+                    "name": c["name"],
+                    "balance": balance,
+                    "nonce": nonce
+                })
+
 
 
 secrets = json.load(open("secrets.json"))
-print(json.dumps(secrets, indent=2))
 accounts = accountsFromSecrets(secrets)
-print(accounts)
-
-accounts = json.load(open("accounts.json"))
-# print(json.dumps(accounts, indent=2))
-chains = json.load(open("chains.json"))
-
-
-"""
-for c in chains:
-    print(c["name"], ":")
-    web3 = Web3(Web3.HTTPProvider(c["api"]))
-    for a in accounts:
-        balance = web3.eth.getBalance(a["account"])/1e18
-        nonce = web3.eth.getTransactionCount(a["account"])
-        if balance > 0 or nonce > 0:
-            print(a["account"])
-            print("Balance: ", balance)
-            print("Nonce: ", nonce)
-            print("----------")
-    print("==========")
-"""
+analyzeAccounts(accounts)
+storeAccounts(accounts)
 

@@ -1,4 +1,5 @@
-accounts.json
+secrets.json
+accounts-*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
