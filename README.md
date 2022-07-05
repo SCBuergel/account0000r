@@ -13,11 +13,27 @@ Requires a `secrets.json` file in the root directory which contains a list of mn
 [
   {
     "mnemonic": "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong",
-    "passphrase": ""
+    "passphrase": "",
+    "description": "plain testvector mnemonic"
   },
   {
     "mnemonic": "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong",
-    "passphrase": "rekt"
+    "passphrase": "rekt",
+    "description": "testvector mnemonic with password"
+  }
+]
+```
+
+It also requires a `chains.json` file in the root directory with a list of chain names and RPC endpoints:
+```
+[
+  {
+    "name": "Ethereum Main Net",
+    "api": "https://rpc.ankr.com/eth"
+  },
+  {
+    "name": "Gnosis Chain",
+    "api": "https://rpc.ankr.com/gnosis"
   }
 ]
 ```

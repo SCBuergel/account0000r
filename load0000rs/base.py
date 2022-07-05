@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-class analyzeBase(ABC):
+class baseLoad0000r(ABC):
     
     @abstractmethod
     def name (self):

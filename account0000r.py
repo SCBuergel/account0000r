@@ -1,9 +1,28 @@
+import json
+import sys
+from datetime import datetime
 from hdwallet import BIP44HDWallet
 from hdwallet.cryptocurrencies import EthereumMainnet
 from hdwallet.derivations import BIP44Derivation
 from hdwallet.utils import generate_mnemonic
 from typing import Optional
 #pip install hdwallet
+
+def analyzeAccounts(analyz0000rs, accounts, chainsFileName="chains.json"):
+    chains = json.load(open("chains.json"))
+    for ci in range(len(chains)):
+        c = chains[ci]
+        for a in range(len(accounts)):
+            print(f"progress: {(ci * len(accounts) + a) / (len(chains) * len(accounts)) * 100:.2f}%")
+            address = accounts[a]["address"]
+            for analyz0000r in analyz0000rs:
+                newEntry = analyz0000r.analyze(address, c)
+                if (c["name"] not in accounts[a]["chains"]):
+                    accounts[a]["chains"][c["name"]] = {}
+
+                accounts[a]["chains"][c["name"]][analyz0000r.name()] = newEntry
+    return accounts
+
 
 
 # optionally an existing accounts list can be passed
@@ -51,4 +70,12 @@ def accountsFromSecrets(secrets, accounts=[], hdPath="m/44'/60'/0'/0", numAccoun
     return accounts
 
 
+
+
+# this will create or overwrite the file
+def storeAccounts(accounts, accountFileName="accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
+    file = open(accountFileName, "w")
+    prettyAccounts = json.dumps(accounts, indent=2)
+    file.write(prettyAccounts)
+    file.close()
 

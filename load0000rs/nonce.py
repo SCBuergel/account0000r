@@ -1,19 +1,16 @@
 from web3 import Web3
-from analyzeBase import analyzeBase
+from load0000rs.base import baseLoad0000r
 
-class analyzeEthBalance(analyzeBase):
+class load0000r(baseLoad0000r):
     def name(self):
-        return "ETH balance"
+        return "nonce"
 
     def version(self):
         return "0.0.1"
 
     def analyze(self, account, chain):
         web3 = Web3(Web3.HTTPProvider(chain["api"]))
-        balance = web3.eth.getBalance(account)/1e18
+        nonce = web3.eth.getTransactionCount(account)
         newEntry = self.createEmptyAccountEntry()
-        newEntry["nativeBalance"] = balance
+        newEntry["nonce"] = nonce
         return newEntry
-
-
-
