@@ -1,4 +1,4 @@
-# account0000r - easily extendable Ethereum account overview
+# account0000r - extendable EVM account overview
 
 account0000r lets you check EVM accounts accross chains. It keeps a local record in a JSON file and is aimed at being easily extendable.
 
@@ -30,6 +30,7 @@ Instances of each `load0000r` are then passed as a list to the `account0000r.ana
 So in order to write your own `load0000r`, you can follow the examples in the `load0000rs` folder, `import` it in the `runn0000r.py` file and pass an instance of it to the list argument of the `account0000r.analyzeAccounts` function. 
 
 ## File and folder structure
+```
 .
 ├── data - contains JSON output files with account metadata
 ├── load0000rs
@@ -41,7 +42,10 @@ So in order to write your own `load0000r`, you can follow the examples in the `l
 ├── account0000r.py - the main account0000r module with the main functions
 ├── runn0000r.py - an example file with snippets to initialize accounts, load metadata and run simple analysis on the acccounts metadata object
 └── README.md - this README file
- 
+```
+
+
+
 ## Settings files
 Requires a `secrets.json` file in the root directory which contains a list of mnemonics and passphrases, as follows:
 ```
