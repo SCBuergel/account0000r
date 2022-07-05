@@ -1,4 +1,4 @@
-*.py.swp
+*.swp
 secrets.json
 accounts-*.json
 
