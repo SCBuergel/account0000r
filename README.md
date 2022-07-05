@@ -1,8 +1,14 @@
 # account0000r - extendable EVM account overview
 
-account0000r lets you check EVM accounts accross chains. It keeps a local record in a JSON file and is aimed at being easily extendable.
+account0000r lets you check EVM accounts accross chains. It keeps a local record in a JSON file and is aimed at being easily extendable. It helps you answer questions such as:
 
+> On which chain did I use this account?
 
+> Which of my 100 accounts has a balance > 0 on any chain?
+
+> I backed up my mnemonic, but where are the accounts and which of them did I ever use?
+
+> Do I have any unclaimed [ENTER PROJECT NAME] airdrops for any of my 100 accounts?
 
 ## Usage
 
