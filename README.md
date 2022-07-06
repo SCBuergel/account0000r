@@ -12,7 +12,10 @@ account0000r lets you check EVM accounts accross chains. It keeps a local record
 
 ## Usage
 
-account0000r is built for managing accounts in independent steps:
+account0000r comprises a set of Python tools to create accounts, load metadata of accounts and analyze them. 
+See the `runn0000r.py` script for some usage examples.
+
+The account0000r Python package is built for managing accounts in separate steps:
 
 ### `account0000r.accountsFromSecrets`
 Returns a list of accounts with metadata from a mnemonic & passphrase setting file
@@ -58,15 +61,25 @@ Requires a `secrets.json` file in the root directory which contains a list of mn
 [
   {
     "mnemonic": "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong",
-    "passphrase": "",
     "description": "plain testvector mnemonic"
   },
   {
     "mnemonic": "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong",
     "passphrase": "rekt",
+    "hdPath": "m/44'/60'/0'",
+    "numAccounts": 20,
+    "accountOffset": 1000,
     "description": "testvector mnemonic with password"
   }
 ]
+```
+The following are optional fields with indicated default values:
+```
+"passphrase" (default: "")
+"hdPath" (default: "m/44'/60'/0'/0")
+"numAccounts" (default: 10)
+"accountOffset" (default: 0)
+"description" (default: "")
 ```
 
 It also requires a `chains.json` file in the root directory with a list of chain names and RPC endpoints:

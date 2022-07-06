@@ -25,11 +25,16 @@ def analyzeAccounts(analyz0000rs, accounts, chainsFileName="chains.json"):
 
 # optionally an existing accounts list can be passed
 # existing elements in the list are not overwritten
-def accountsFromSecrets(secrets, accounts=[], hdPath="m/44'/60'/0'/0", numAccounts=10):
+def accountsFromSecrets(secrets, accounts=[]):
 
     for s in secrets:
         MNEMONIC = s["mnemonic"]
-        PASSPHRASE = s["passphrase"]
+        PASSPHRASE = s["passphrase"] if ("passphrase" in s) else ""
+        hdPath = s["hdPath"] if ("hdPath" in s) else "m/44'/60'/0'/0"
+        numAccounts = int(s["numAccounts"]) if ("numAccounts" in s) else 10
+        accountOffset = int(s["accountOffset"]) if ("accountOffset" in s) else 0
+        description = s["description"] if ("description" in s) else ""
+
         bip44_hdwallet: BIP44HDWallet = BIP44HDWallet(cryptocurrency=EthereumMainnet)
         # Get Ethereum BIP44HDWallet from mnemonic
         bip44_hdwallet.from_mnemonic(
@@ -44,7 +49,7 @@ def accountsFromSecrets(secrets, accounts=[], hdPath="m/44'/60'/0'/0", numAccoun
             bip44_hdwallet.from_index(int(numElem), hardened=(elem.endswith("'")))
 
         # Get Ethereum BIP44HDWallet information's from address index
-        for address_index in range(numAccounts):
+        for address_index in range(accountOffset, numAccounts + accountOffset):
             bip44_hdwallet.clean_derivation()
             # Derivation from Ethereum BIP44 derivation path
             bip44_derivation: BIP44Derivation = BIP44Derivation(
@@ -53,7 +58,6 @@ def accountsFromSecrets(secrets, accounts=[], hdPath="m/44'/60'/0'/0", numAccoun
             # Drive Ethereum BIP44HDWallet
             bip44_hdwallet.from_path(path=bip44_derivation)
             # Print address_index, path, address and private_key
-            # print(f"({address_index}) {bip44_hdwallet.path()} {bip44_hdwallet.address()} 0x{bip44_hdwallet.private_key()}")
             address = bip44_hdwallet.address()
 
             # only append new entry if it's not on the account list already
@@ -62,7 +66,7 @@ def accountsFromSecrets(secrets, accounts=[], hdPath="m/44'/60'/0'/0", numAccoun
                     "address": address,
                     "index": address_index,
                     "use": "",
-                    "mnemonic": s["description"],
+                    "mnemonic": description,
                     "chains": {}
                 })
     return accounts
