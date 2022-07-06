@@ -75,7 +75,7 @@ def accountsFromSecrets(secrets, accounts=[]):
 
 
 # this will create or overwrite the file
-def storeAccounts(accounts, accountFileName="accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
+def storeAccounts(accounts, accountFileName="data/accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
     file = open(accountFileName, "w")
     prettyAccounts = json.dumps(accounts, indent=2)
     file.write(prettyAccounts)
