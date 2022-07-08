@@ -10,6 +10,10 @@ account0000r lets you check EVM accounts accross chains. It keeps a local record
 
 > Do I have any unclaimed [ENTER PROJECT NAME] airdrops for any of my 100 accounts?
 
+![The account0000r Wojak meme](https://github.com/SCBuergel/account0000r/blob/main/TheAccount0000r.png?raw=true "The account0000r")
+
+
+
 ## Usage
 
 account0000r comprises a set of Python tools to create accounts, load metadata of accounts and analyze them. 
