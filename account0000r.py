@@ -25,7 +25,10 @@ def analyzeAccounts(analyz0000rs, accounts, chainsFileName="chains.json"):
 
 # optionally an existing accounts list can be passed
 # existing elements in the list are not overwritten
-def accountsFromSecrets(secrets, accounts=[]):
+def accountsFromSecrets(secrets, accounts=None):
+
+    if accounts == None:
+        accounts = []
 
     for s in secrets:
         MNEMONIC = s["mnemonic"]
