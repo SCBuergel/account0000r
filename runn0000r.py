@@ -19,14 +19,14 @@ from analyz0000r import listAccountsNonZero, tableAccountsNonZeroBalance, listAc
 
 ### 3. RESTORE ACCOUNTS FROM FILE, LOAD MORE METADATA AND STORE AGAIN
 # some sample analysis
-dataFile = "data/accounts-2022-07-08--13-12-49.json"
+dataFile = "data/accountsBlank.json"
 accounts = json.load(open(dataFile))
-# accounts = account0000r.loadAccountMetadata([airdropOpApi.load0000r()], accounts)
-# account0000r.storeAccounts(accounts)
+accounts = account0000r.loadAccountMetadata([nonce.load0000r(), ethBalance.load0000r(), airdropOpApi.load0000r()], accounts)
+account0000r.storeAccounts(accounts)
 
 
 
 ### 4. PRINT ANALYSIS ON ACCOUNT DATA
-printAccountsNonZeroBalance(accounts)
+listAccountsNonZero(accounts)
 tableAccountsNonZeroBalance(accounts)
 listAccountsAirdropOP(accounts)

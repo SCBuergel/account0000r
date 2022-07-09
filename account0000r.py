@@ -15,6 +15,8 @@ def loadAccountMetadata(load0000rs, accounts, chainsFileName="chains.json"):
             address = accounts[a]["address"]
             for load0000r in load0000rs:
                 newEntry = load0000r.analyze(address, c)
+                if ("chains" not in accounts[a]):
+                    accounts[a]["chains"] = {}
                 if (c["name"] not in accounts[a]["chains"]):
                     accounts[a]["chains"][c["name"]] = {}
 
@@ -22,6 +24,10 @@ def loadAccountMetadata(load0000rs, accounts, chainsFileName="chains.json"):
     return accounts
 
 
+
+# only load mnemonics if you know what you are doing
+# and on a computer that you fully trust
+# otherwise all funds association with these mnemonics will be at risk
 
 # optionally an existing accounts list can be passed
 # existing elements in the list are not overwritten
