@@ -24,3 +24,26 @@ def printBinaryTable(data):
     print(tabulate(tab, headers="firstrow", tablefmt="fancy_grid"))
 
 
+# prints list of all accounts and chain names with non-zero balance
+def listAccountsNonZero(accounts):
+    print("List of accounts with non-dust balance per chain")
+    for a in accounts:
+        for c in a["chains"].items():
+            if c[1]["ETH balance"]["nativeBalance"] > 0:
+                print(f'{a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c[1]["ETH balance"]["nativeBalance"]} on {c[0]}')
+
+# prints all accounts with non-zero balance (ignoring dust)
+def tableAccountsNonZeroBalance(accounts):
+    print("Table of accounts with non-dust balance on any chain")
+    nonZeroBalanceAccounts = list([ad["mnemonic"], ad["index"]] for ad in accounts if sum(list(v["ETH balance"]["nativeBalance"] for v in list(ad["chains"].values()))) > 0.001)
+    printBinaryTable(nonZeroBalanceAccounts)
+
+# all accounts with OP airdrop
+def listAccountsAirdropOP(accounts):
+    print("List of accounts who received an Optimism airdrop")
+    for a in accounts:
+        c = a["chains"]["Optimism"]
+        if c["airdropOpApi"]["airdropOp"] > 0:
+            print(f'OP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c["airdropOpApi"]["airdropOp"]}')
+
+
