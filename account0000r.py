@@ -8,6 +8,7 @@ from hdwallet.utils import generate_mnemonic
 
 def loadAccountMetadata(load0000rs, accounts, chainsFileName="chains.json"):
     chains = json.load(open("chains.json"))
+    print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
     for ci in range(len(chains)):
         c = chains[ci]
         for a in range(len(accounts)):
@@ -89,4 +90,4 @@ def storeAccounts(accounts, accountFileName="data/accounts-" + datetime.now().st
     prettyAccounts = json.dumps(accounts, indent=2)
     file.write(prettyAccounts)
     file.close()
-
+    return accountFileName

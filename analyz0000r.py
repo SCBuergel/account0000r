@@ -40,10 +40,20 @@ def tableAccountsNonZeroBalance(accounts):
 
 # all accounts with OP airdrop
 def listAccountsAirdropOP(accounts):
-    print("List of accounts who received an Optimism airdrop")
+    print("List of accounts which received the Optimism airdrop")
     for a in accounts:
         c = a["chains"]["Optimism"]
-        if c["airdropOpApi"]["airdropOp"] > 0:
-            print(f'OP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c["airdropOpApi"]["airdropOp"]}')
+        airdropAmount = c["airdropOpApi"]["airdropOp"]
+        if airdropAmount > 0:
+            print(f'HOP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
+
+# all accounts with HOP airdrop
+def listAccountsAirdropHop(accounts):
+    print("List of accounts which received the HOP airdrop")
+    for a in accounts:
+        c = a["chains"]["Ethereum Main Net"]
+        airdropAmount = c["airdropHopJson"]["amountToken"]
+        if airdropAmount > 0:
+            print(f'HOP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
 
 
