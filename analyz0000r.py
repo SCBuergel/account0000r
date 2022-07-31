@@ -45,7 +45,7 @@ def listAccountsAirdropOP(accounts):
         c = a["chains"]["Optimism"]
         airdropAmount = c["airdropOpApi"]["airdropOp"]
         if airdropAmount > 0:
-            print(f'HOP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
+            print(f'OP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
 
 # all accounts with HOP airdrop
 def listAccountsAirdropHop(accounts):

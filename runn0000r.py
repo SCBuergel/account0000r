@@ -21,7 +21,7 @@ from analyz0000r import listAccountsNonZero, tableAccountsNonZeroBalance, listAc
 # some sample analysis
 dataFile = "data/accounts-2022-07-06--21-50-57.json"
 accounts = json.load(open(dataFile))
-accounts = account0000r.loadAccountMetadata([airdropHopJson.load0000r()], accounts)
+accounts = account0000r.loadAccountMetadata([airdropOpApi.load0000r()], accounts)
 #accounts = account0000r.loadAccountMetadata([airdropHopApi.load0000r()], accounts)
 outputFile = account0000r.storeAccounts(accounts)
 print("stored output file ", outputFile)
@@ -32,6 +32,7 @@ print("stored output file ", outputFile)
 """
 listAccountsNonZero(accounts)
 tableAccountsNonZeroBalance(accounts)
-listAccountsAirdropOP(accounts)
-"""
 listAccountsAirdropHop(accounts)
+"""
+listAccountsAirdropOP(accounts)
+
