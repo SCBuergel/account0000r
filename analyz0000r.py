@@ -25,8 +25,16 @@ def printBinaryTable(data):
 
 
 # prints list of all accounts and chain names with non-zero balance
+def listAccountsNonZeroAtBlock(accounts):
+    print("List of accounts with non-zero balance per chain at a specific block number")
+    for a in accounts:
+        for c in a["chains"].items():
+            if c[1]["ETH balance at block"]["nativeBalance"] > 0:
+                print(f'{a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c[1]["ETH balance at block"]["nativeBalance"]} on {c[0]}')
+
+## prints list of all accounts and chain names with non-zero balance
 def listAccountsNonZero(accounts):
-    print("List of accounts with non-dust balance per chain")
+    print("List of accounts with non-zero balance per chain")
     for a in accounts:
         for c in a["chains"].items():
             if c[1]["ETH balance"]["nativeBalance"] > 0:
@@ -34,8 +42,9 @@ def listAccountsNonZero(accounts):
 
 # prints all accounts with non-zero balance (ignoring dust)
 def tableAccountsNonZeroBalance(accounts):
+    dust = 0
     print("Table of accounts with non-dust balance on any chain")
-    nonZeroBalanceAccounts = list([ad["mnemonic"], ad["index"]] for ad in accounts if sum(list(v["ETH balance"]["nativeBalance"] for v in list(ad["chains"].values()))) > 0.001)
+    nonZeroBalanceAccounts = list([ad["mnemonic"], ad["index"]] for ad in accounts if sum(list(v["ETH balance"]["nativeBalance"] for v in list(ad["chains"].values()))) > dust)
     printBinaryTable(nonZeroBalanceAccounts)
 
 # all accounts with OP airdrop

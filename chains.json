@@ -21,6 +21,6 @@
   },
   { 
     "name": "Optimism",
-    "api": "https://mainnet.optimism.io"
+    "api": "https://rpc.ankr.com/optimism"
   }
 ]

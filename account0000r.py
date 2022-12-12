@@ -5,9 +5,10 @@ from hdwallet.cryptocurrencies import EthereumMainnet
 from hdwallet.derivations import BIP44Derivation
 from hdwallet.utils import generate_mnemonic
 #pip install hdwallet
+from web3 import Web3
+from web3.middleware import geth_poa_middleware
 
-def loadAccountMetadata(load0000rs, accounts, chainsFileName="chains.json"):
-    chains = json.load(open("chains.json"))
+def loadAccountMetadata(load0000rs, accounts, chains):
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
     for ci in range(len(chains)):
         c = chains[ci]
@@ -48,8 +49,8 @@ def accountsFromSecrets(secrets, accounts=None):
         bip44_hdwallet: BIP44HDWallet = BIP44HDWallet(cryptocurrency=EthereumMainnet)
         # Get Ethereum BIP44HDWallet from mnemonic
         bip44_hdwallet.from_mnemonic(
-            mnemonic=MNEMONIC, language="english", passphrase=PASSPHRASE
-        )
+                mnemonic=MNEMONIC, language="english", passphrase=PASSPHRASE
+                )
 
         # split the string hdPath into its elements and skip the first "m" element
         pathElements = hdPath.split("/")[1:]
@@ -63,8 +64,8 @@ def accountsFromSecrets(secrets, accounts=None):
             bip44_hdwallet.clean_derivation()
             # Derivation from Ethereum BIP44 derivation path
             bip44_derivation: BIP44Derivation = BIP44Derivation(
-                cryptocurrency=EthereumMainnet, account=0, change=False, address=address_index
-            )
+                    cryptocurrency=EthereumMainnet, account=0, change=False, address=address_index
+                    )
             # Drive Ethereum BIP44HDWallet
             bip44_hdwallet.from_path(path=bip44_derivation)
             # Print address_index, path, address and private_key
@@ -78,8 +79,8 @@ def accountsFromSecrets(secrets, accounts=None):
                     "use": "",
                     "mnemonic": description,
                     "chains": {}
-                })
-    return accounts
+                    })
+                return accounts
 
 
 
@@ -91,3 +92,41 @@ def storeAccounts(accounts, accountFileName="data/accounts-" + datetime.now().st
     file.write(prettyAccounts)
     file.close()
     return accountFileName
+
+
+
+def getBlockNumberByTime(timestamp, chains):
+    blockNos = []
+    for c in range(len(chains)):
+        chain = chains[c]
+        web3 = Web3(Web3.HTTPProvider(chain["api"]))
+        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        smallerBlock = web3.eth.get_block(1, False)
+        biggerBlock = web3.eth.get_block("latest")
+        if (timestamp < smallerBlock.timestamp):
+            print(f"Error: targer timestamp {timestamp} is earlier than the timestampe of block number 1 on {chain['name']} which is {smallerBlock.timestamp}")
+            return
+        elif (timestamp > biggerBlock.timestamp):
+            print(f"Error: target timestamp {timestamp} is later than the timestampe of the latest block (block number {biggerBlock.number}) on {chain['name']} which is {biggerBlock.timestamp}")
+            return
+        else:
+            while (True):
+                # print(f"{smallerBlock.number}:{smallerBlock.timestamp}")
+                # print(f"{biggerBlock.number}:{biggerBlock.timestamp}")
+                nextBlockNo = int((biggerBlock.number + smallerBlock.number) / 2)
+                nextBlock = web3.eth.get_block(nextBlockNo, False)
+                if (nextBlock.timestamp >= timestamp):
+                    if (nextBlock.number == biggerBlock.number):
+                        # print(f"we're close enough for a rounding error, quitting here")
+                        break;
+                    biggerBlock = nextBlock
+                else:
+                    if (nextBlock.number == smallerBlock.number):
+                        # print(f"we're close enough for a rounding error, quitting here")
+                        break;
+                    smallerBlock = nextBlock
+
+        print(f"block {nextBlock.number} happened at time {nextBlock.timestamp}")
+        blockNos.append(nextBlock.number)
+    return blockNos
+
