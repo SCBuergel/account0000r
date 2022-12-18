@@ -3,6 +3,15 @@ import numpy as np
 from collections import defaultdict
   
 def printBinaryTable(data):
+    """Prints a binary table out of a list with two columns where included accounts are marked with an "X" mark
+
+    First row of the printed table contains the name of the mnemonic, first column contains the HD wallet index, the table contains "X" marks for accounts that are included in the data list
+
+    Parameters
+    ----------
+    list[string, int] : a list with two columns, first one is the name of the mnemonic, second one is the index of the HD wallet index, all accounts included in the list are marked in the printed table
+    """
+
     npData = np.array(data)
     mnemonics = sorted(set(npData[:, 0]))
     indices = sorted(set([int(elem) for elem in npData[:,1]]))
@@ -25,26 +34,33 @@ def printBinaryTable(data):
 
 
 # prints list of all accounts and chain names with non-zero balance
-def listAccountsNonZeroAtBlock(accounts):
-    print("List of accounts with non-zero balance per chain at a specific block number")
+def listAccountsNonZero(accounts, load0000r="ETH balance", dust=0, printCsv=False):
+    print(f"List of accounts with > {dust} {load0000r} per chain")
     for a in accounts:
         for c in a["chains"].items():
-            if c[1]["ETH balance at block"]["nativeBalance"] > 0:
-                print(f'{a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c[1]["ETH balance at block"]["nativeBalance"]} on {c[0]}')
+            if c[1][load0000r]["nativeBalance"] > dust:
+                if printCsv:
+                    print(f"{a['address']}, {c[0]}, {c[1][load0000r]['nativeBalance']},")
+                else:
+                    print(f'{a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c[1][load0000r]["nativeBalance"]} on {c[0]}')
 
-## prints list of all accounts and chain names with non-zero balance
-def listAccountsNonZero(accounts):
-    print("List of accounts with non-zero balance per chain")
-    for a in accounts:
-        for c in a["chains"].items():
-            if c[1]["ETH balance"]["nativeBalance"] > 0:
-                print(f'{a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c[1]["ETH balance"]["nativeBalance"]} on {c[0]}')
+def tableAccountsNonZeroBalance(accounts, load0000r="ETH balance", dust=0):
+    """Prints an overview table showing all accounts with non-dust balance
 
-# prints all accounts with non-zero balance (ignoring dust)
-def tableAccountsNonZeroBalance(accounts):
-    dust = 0
-    print("Table of accounts with non-dust balance on any chain")
-    nonZeroBalanceAccounts = list([ad["mnemonic"], ad["index"]] for ad in accounts if sum(list(v["ETH balance"]["nativeBalance"] for v in list(ad["chains"].values()))) > dust)
+    Prints and overview table where all accounts with non-dust balance are highlighted with an "X" mark and all other accounts remain unmarked. This gives a quick overview of which accounts where used at all.
+
+    Parameters
+    ----------
+    accounts : list[account]
+        a list of accounts loaded by account0000r
+    load0000r : string, optional
+        the name of the field within an account, default: "ETH balance"
+    dust : int, optional
+        accounts with native balances smaller or equal to dust are ignored and not marked on overview table
+    """
+
+    print(f"Table of accounts with > {dust} {load0000r} per chain")
+    nonZeroBalanceAccounts = list([ad["mnemonic"], ad["index"]] for ad in accounts if sum(list(vi[load0000r]["nativeBalance"] for v in list(ad["chains"].values()))) > dust)
     printBinaryTable(nonZeroBalanceAccounts)
 
 # all accounts with OP airdrop

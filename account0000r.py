@@ -96,6 +96,23 @@ def storeAccounts(accounts, accountFileName="data/accounts-" + datetime.now().st
 
 
 def getBlockNumberByTime(timestamp, chains):
+    """Returns list of block numbers at a timestamp on various chains
+
+    Returns a list of block numbers that correspond to the timestamp passed as first parameter for all chains that are passed as the second argument. Doing binary search on blocks that are obtained via each chain's RPC API.
+
+    Parameters
+    ----------
+    timestamp : int
+        timestamp for which block numbers should be identified for each chain. The timestamp has to exist on each chain.
+    chains : list[chain]
+        list of chain objects that have "api" field with RPC endpoint and "name" field with the name of that chain
+
+    Returns
+    -------
+    list
+        a list of block numbers of each chain corresponding to timestamp, same order as the chains list
+    """
+
     blockNos = []
     for c in range(len(chains)):
         chain = chains[c]

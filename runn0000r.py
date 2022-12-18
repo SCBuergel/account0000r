@@ -1,7 +1,7 @@
 import json
 import account0000r
-from load0000rs import ethBalance, ethBalanceAtBlock, nonce, airdropOpApi, airdropHopApi, airdropHopJson
-from analyz0000r import listAccountsNonZero, listAccountsNonZeroAtBlock, tableAccountsNonZeroBalance, listAccountsAirdropOP, listAccountsAirdropHop
+from load0000rs import ethBalance, ethBalanceAtBlock, nonce, airdropOpApi, airdropHopApi, airdropHopJson, erc20BalanceAtBlock
+from analyz0000r import listAccountsNonZero, tableAccountsNonZeroBalance, listAccountsAirdropOP, listAccountsAirdropHop
 
 
 
@@ -35,14 +35,18 @@ chains = json.load(open("chains.json"))
 # dataFile = "data/accounts-2022-12-10--23-42-58.json"
 dataFile = "data/accounts-2022-12-13--00-41-45.json"
 accounts = json.load(open(dataFile))
+ldr = erc20BalanceAtBlock.load0000r()
+ldr.analyze(accounts[13], chains[0])
 # accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
 #accounts = account0000r.loadAccountMetadata([airdropHopApi.load0000r()], accounts, chains)
 #outputFile = account0000r.storeAccounts(accounts)
 #print("stored output file ", outputFile)
 
 ### 4. PRINT ANALYSIS ON ACCOUNT DATA
-listAccountsNonZero(accounts)
-listAccountsNonZeroAtBlock(accounts)
+# listAccountsNonZero(accounts)
+
+#listAccountsNonZero(accounts, "ETH balance at block")
+
 """
 tableAccountsNonZeroBalance(accounts)
 listAccountsAirdropHop(accounts)
