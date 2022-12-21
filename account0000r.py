@@ -9,6 +9,25 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 def loadAccountMetadata(load0000rs, accounts, chains):
+    """Takes a list of accounts and returns them enriched with metadata obtained from a list of load0000rs that are passed
+
+    The load0000rs are run for every account on every chain that is passed to this function. The list of all accounts that contains the resulting analysis results is returned.
+
+    Parameters
+    ----------
+    load0000rs : list[baseLoad0000r]
+        List of loadors which are derived fomr baseLoad0000r and for which the analyze function is executed
+    accounts : list[account]
+        List of accounts which are analyzed, each account in the list is enriched with a load0000r result for each load0000r that is passed
+    chains : list[chains]
+        List of chains for which each load0000r is run
+
+    Returns
+    -------
+    list
+        a list of accounts with the analysis results included for each account
+    """
+
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
     for ci in range(len(chains)):
         c = chains[ci]
@@ -27,13 +46,29 @@ def loadAccountMetadata(load0000rs, accounts, chains):
 
 
 
-# only load mnemonics if you know what you are doing
-# and on a computer that you fully trust
-# otherwise all funds association with these mnemonics will be at risk
-
-# optionally an existing accounts list can be passed
-# existing elements in the list are not overwritten
 def accountsFromSecrets(secrets, accounts=None):
+    """Generats accounts from secrets which comprise mnemonic and optional passphrase
+
+    Warning! Only load mnemonics into software on a machine that you both fully trust, you might loose all your funds if these mnemonics are leaked or logged anywhere!
+
+    Parameters
+    ----------
+    secrets : list[secret]
+        A list of objects comprising fields for:
+            ["mnemonic"]: The mnemonic from which accounts are derived
+            ["passphrase"] (optional, default: ""): The passphrase from which the accounts are derived in combination with the mnemonics
+            ["hdPath"] (optional, default: "m/44'/60'/0'/0"): The HD key path from which the accounts are derived
+            ["numAccounts"] (optional, default: 10): The number of accounts to be derived
+            ["accountOffset"] (optional, default: 0): The offset index for which the first account is derived
+            ["description"] (optional, default: ""): The description of the mnemonic, used as a description for each account also
+    accounts : list[account], optional
+        a list of accounts to which the newly derived are appended. If a newly generated account already exists on the list, it is ignored and not overwritten or duplicated
+
+    Returns
+    -------
+    list
+        a list of accounts with the analysis results included for each account
+    """
 
     if accounts == None:
         accounts = []
@@ -59,16 +94,15 @@ def accountsFromSecrets(secrets, accounts=None):
             numElem = elem.split("'")[0]
             bip44_hdwallet.from_index(int(numElem), hardened=(elem.endswith("'")))
 
-        # Get Ethereum BIP44HDWallet information's from address index
+        # Get Ethereum BIP44HDWallet informations from address index
         for address_index in range(accountOffset, numAccounts + accountOffset):
             bip44_hdwallet.clean_derivation()
-            # Derivation from Ethereum BIP44 derivation path
+            # Derivation from Ethereum BIP44 derivation
             bip44_derivation: BIP44Derivation = BIP44Derivation(
                     cryptocurrency=EthereumMainnet, account=0, change=False, address=address_index
                     )
             # Drive Ethereum BIP44HDWallet
             bip44_hdwallet.from_path(path=bip44_derivation)
-            # Print address_index, path, address and private_key
             address = bip44_hdwallet.address()
 
             # only append new entry if it's not on the account list already
@@ -87,6 +121,15 @@ def accountsFromSecrets(secrets, accounts=None):
 
 # this will create or overwrite the file
 def storeAccounts(accounts, accountFileName="data/accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
+    """Writes a list of accounts as pretty formatted JSON to a file, file will be overwritten if it already exist
+
+    Parameters
+    ----------
+    accounts : list[account]
+        a list of accounts loaded by account0000r
+    accountFileName : string, optional
+        filename to which to write, by default data is written to the data folder and the file is post-fixed with the current data and time
+    """
     file = open(accountFileName, "w")
     prettyAccounts = json.dumps(accounts, indent=2)
     file.write(prettyAccounts)

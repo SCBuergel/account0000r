@@ -1,7 +1,9 @@
 from tabulate import tabulate
 import numpy as np
 from collections import defaultdict
-  
+
+
+
 def printBinaryTable(data):
     """Prints a binary table out of a list with two columns where included accounts are marked with an "X" mark
 
@@ -33,8 +35,22 @@ def printBinaryTable(data):
     print(tabulate(tab, headers="firstrow", tablefmt="fancy_grid"))
 
 
-# prints list of all accounts and chain names with non-zero balance
+
 def listAccountsNonZero(accounts, load0000r="ETH balance", dust=0, printCsv=False):
+    """Prints list of all accounts and chain names with non-dust balance
+
+    Parameters
+    ----------
+    accounts : list[account]
+        List of accounts which are printed (if non-dust balance)
+    load0000r : string, optional
+        The load0000r module for which the ["nativeBalance"] property is printed if it is non-dust, default: "ETH balance"
+    dust: number, optional
+        Accounts with native balance smaller or equal to this dust value are not listed, default: 0
+    printCsv: bool, optional
+        True prints the list in CSV format, False prints a human-readable list, default: False
+    """
+
     print(f"List of accounts with > {dust} {load0000r} per chain")
     for a in accounts:
         for c in a["chains"].items():
@@ -43,6 +59,8 @@ def listAccountsNonZero(accounts, load0000r="ETH balance", dust=0, printCsv=Fals
                     print(f"{a['address']}, {c[0]}, {c[1][load0000r]['nativeBalance']},")
                 else:
                     print(f'{a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c[1][load0000r]["nativeBalance"]} on {c[0]}')
+
+
 
 def tableAccountsNonZeroBalance(accounts, load0000r="ETH balance", dust=0):
     """Prints an overview table showing all accounts with non-dust balance
@@ -54,17 +72,26 @@ def tableAccountsNonZeroBalance(accounts, load0000r="ETH balance", dust=0):
     accounts : list[account]
         a list of accounts loaded by account0000r
     load0000r : string, optional
-        the name of the field within an account, default: "ETH balance"
-    dust : int, optional
-        accounts with native balances smaller or equal to dust are ignored and not marked on overview table
+        The load0000r module for which the ["nativeBalance"] property is evaluated, default: "ETH balance"
+    dust : number, optional
+        accounts with native balances smaller or equal to dust are ignored and not marked on overview table, default: 0
     """
 
     print(f"Table of accounts with > {dust} {load0000r} per chain")
     nonZeroBalanceAccounts = list([ad["mnemonic"], ad["index"]] for ad in accounts if sum(list(vi[load0000r]["nativeBalance"] for v in list(ad["chains"].values()))) > dust)
     printBinaryTable(nonZeroBalanceAccounts)
 
-# all accounts with OP airdrop
+
+
 def listAccountsAirdropOP(accounts):
+    """Prints an overview table showing all accounts which received an Optimism airdrop
+
+    Parameters
+    ----------
+    accounts : list[account]
+        a list of accounts loaded by account0000r
+    """
+
     print("List of accounts which received the Optimism airdrop")
     for a in accounts:
         c = a["chains"]["Optimism"]
@@ -72,13 +99,21 @@ def listAccountsAirdropOP(accounts):
         if airdropAmount > 0:
             print(f'OP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
 
-# all accounts with HOP airdrop
+
+
 def listAccountsAirdropHop(accounts):
+    """Prints an overview table showing all accounts which received an HOP airdrop
+
+    Parameters
+    ----------
+    accounts : list[account]
+        a list of accounts loaded by account0000r
+    """
+
     print("List of accounts which received the HOP airdrop")
     for a in accounts:
         c = a["chains"]["Ethereum Main Net"]
         airdropAmount = c["airdropHopJson"]["amountToken"]
         if airdropAmount > 0:
             print(f'HOP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
-
 

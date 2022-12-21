@@ -16,7 +16,7 @@ account0000r lets you check EVM accounts accross chains. It keeps a local record
 
 ## Usage
 
-account0000r comprises a set of Python tools to create accounts, load metadata of accounts and analyze them. 
+account0000r comprises a set of Python tools to derive accounts, load metadata of accounts and analyze them. 
 See the `runn0000r.py` script for usage examples.
 
 The main features are the `load0000r` classes which load metadata of accounts and `analyz0000r` functions which print analysis results of those account metadata.
@@ -25,13 +25,13 @@ Both `load0000r` classes and `analyz0000r` functions are easily extendable as ou
 The account0000r Python package is built for managing accounts in separate steps:
 
 ### 1. `account0000r.accountsFromSecrets`
-Returns a list of accounts with metadata from a mnemonic & passphrase setting file (see more information on settings files below).
+Returns a list of BIP44 HD wallet Ethereum accounts with metadata from a mnemonic & passphrase setting file (see more information on settings files below).
 Only load mnemonics if you know what you are doing and on a computer that you fully trust. Otherwise all funds association with these mnemonics will be at risk.
 Alternatively, you can assemble the accounts.json file manually (see below for more information on how that file is structured).
 
 ### 2. `account0000r.storeAccounts`
 Stores the list of accounts and metadata.
-This file can be read at a later time for loading additional metadata of each account.
+This file can be read at a later time for loading additional metadata of each account or add more accounts that are derived from mnemonic and passphrase
 
 ### 3. Read account data from file
 Since account metadata files stored as JSON, they can be loaded via
@@ -42,9 +42,12 @@ accounts = json.load(open("accounts.json"))
 
 ### 4. `account0000r.loadAccountMetadata`
 Loads account data from a set of EVM chains.
-Simple examples that are included already now are balances, nonces of accounts but account0000r's extendable nature makes this step easily adjustable to load token balances, pending airdrop claims or other highly custom properties.
+Simple examples that are included already now are balances, nonces of accounts but account0000r's extendable nature makes this step easily adjustable to load token balances, pending airdrop claims or other highly custom properties by writing your own `load0000r` (see below for more details).
 The chains from which metadata is loaded are specified in the `chains.json` file (see more info on settings files below).
 
+### 5. Run analyz0000r
+After loading account metadata via a `load0000r`, the results are recorded in the `accounts` list and can be analyzed (and typically printed to the console output) via a corresponding `analyz0000r` function.
+account0000r makes it easy to write your own `analyz0000r` function (see below for more details).
 
 
 
@@ -53,6 +56,12 @@ You can easily extend the capabilities of account0000r by writing your own `load
 The specific data is loaded via `load0000r` classes (locaded in the `load0000r` folder) that are all derived from an abstract `baseLoad0000r` class.
 Instances of each `load0000r` are then passed as a list to the `account0000r.loadAccountMetadata` function.
 When writing your own `load0000r`, you can follow the examples in the `load0000rs` folder, `import` it in the `runn0000r.py` file and pass an instance of it to the list argument of the `account0000r.loadAccountMetadata` function.
+
+
+
+## Write yoru own `analyz0000r`
+Similar as with writing your own `load0000r`, you can easily write a correponding `analyz0000r` function to e.g. display results and write them to the console.
+While you can write the analysis functions however you please, it is recommended to add them to the `analyz0000r.py` file and `import` the function in the `runn0000r.py` file and also call it from there, just like for the provided functions.
 
 
 

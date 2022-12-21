@@ -28,6 +28,14 @@ from analyz0000r import listAccountsNonZero, tableAccountsNonZeroBalance, listAc
 
 
 
+"""
+TODO:
+    - create preprocessing function in account0000r.py that checks if chain object has entry for block at timestamp, if not: add it
+    - add preprocessing function into load0000r constructor and call it
+    - in the ...AtBlock functions simply access that property from the chain object
+    
+"""
+
 ### 3. RESTORE ACCOUNTS FROM FILE, LOAD MORE METADATA AND STORE AGAIN
 # some sample analysis
 chains = json.load(open("chains.json"))
