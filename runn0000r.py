@@ -2,6 +2,7 @@ import json
 import account0000r
 from load0000rs import ethBalance, ethBalanceAtBlock, nonce, airdropOpApi, airdropHopApi, airdropHopJson, erc20BalanceAtBlock
 from analyz0000r import listAccountsNonZero, tableAccountsNonZeroBalance, listAccountsAirdropOP, listAccountsAirdropHop
+import chainLoad0000rs
 
 
 
@@ -27,24 +28,28 @@ from analyz0000r import listAccountsNonZero, tableAccountsNonZeroBalance, listAc
 
 
 
-
 """
 TODO:
+    - we need a way to preprocess the chain list similarly to the account list and add metadata per chain. E.g. the EOY block number or token addresses
     - create preprocessing function in account0000r.py that checks if chain object has entry for block at timestamp, if not: add it
-    - add preprocessing function into load0000r constructor and call it
-    - in the ...AtBlock functions simply access that property from the chain object
-    
+    - load0000r in the ...AtBlock functions simply access that property from the chain object and accesses the EOY block number
+       
 """
 
 ### 3. RESTORE ACCOUNTS FROM FILE, LOAD MORE METADATA AND STORE AGAIN
 # some sample analysis
-chains = json.load(open("chains.json"))
+chains = json.load(open("chainsSmall.json"))
 # chains = chains[4:]
 # dataFile = "data/accounts-2022-12-10--23-42-58.json"
-dataFile = "data/accounts-2022-12-13--00-41-45.json"
+dataFile = "data/accountsBlank.json"
 accounts = json.load(open(dataFile))
-ldr = erc20BalanceAtBlock.load0000r()
-ldr.analyze(accounts[13], chains[0])
+#ldr = erc20BalanceAtBlock.load0000r()
+#ldr.analyze(accounts[13], chains[0])
+endOf2021Timestamp = 1640991600
+chainsEnriched = account0000r.loadChainMetadata([chainLoad0000rs.blockNumberByTimestamp(endOf2021Timestamp)], accounts, chains)
+account0000r.writeJson(chainsEnriched, "chainsSmall-Enriched.json")
+
+
 # accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
 #accounts = account0000r.loadAccountMetadata([airdropHopApi.load0000r()], accounts, chains)
 #outputFile = account0000r.storeAccounts(accounts)

@@ -59,7 +59,7 @@ When writing your own `load0000r`, you can follow the examples in the `load0000r
 
 
 
-## Write yoru own `analyz0000r`
+## Write your own `analyz0000r`
 Similar as with writing your own `load0000r`, you can easily write a correponding `analyz0000r` function to e.g. display results and write them to the console.
 While you can write the analysis functions however you please, it is recommended to add them to the `analyz0000r.py` file and `import` the function in the `runn0000r.py` file and also call it from there, just like for the provided functions.
 

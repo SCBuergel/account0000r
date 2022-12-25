@@ -8,6 +8,42 @@ from hdwallet.utils import generate_mnemonic
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
+def loadChainMetadata(load0000rs, accounts, chains):
+    """Takes a list of chains and returns them enriched with metadata obtained from a list of chain load0000rs that are passed
+
+    The load0000rs are run for every chain that is passed to this function. The modified list of chains that contains the resulting analysis results is returned.
+
+    Parameters
+    ----------
+    load0000rs : list[baseLoad0000r]
+        List of loadors which are derived fomr baseLoad0000r and for which the analyze function is executed
+    accounts : list[account]
+        List of accounts which are passed to the chain load0000r
+    chains : list[chains]
+        List of chains for which each load0000r is run, each chain in the list is enriched with a load0000r result for each load0000r that is passed
+
+
+    Returns
+    -------
+    list
+        a list of accounts with the analysis results included for each account
+    """
+
+    print("checking ", len(chains), " chains:")
+    for ci in range(len(chains)):
+        c = chains[ci]
+        print(f"progress: {ci / len(chains) * 100:.2f}%")
+        for load0000r in load0000rs:
+            newEntry = load0000r.analyze(c, accounts)
+            if ("metadata" not in c):
+                print(f"adding new entry for \"metadata\" field")
+                chains[ci]["metadata"] = {}
+            if (load0000r.name() not in chains[ci]["metadata"]):
+                chains[ci]["metadata"][load0000r.name()] = {}
+                chains[ci]["metadata"][load0000r.name()] = newEntry
+    return chains
+
+
 def loadAccountMetadata(load0000rs, accounts, chains):
     """Takes a list of accounts and returns them enriched with metadata obtained from a list of load0000rs that are passed
 
@@ -118,75 +154,19 @@ def accountsFromSecrets(secrets, accounts=None):
 
 
 
-
-# this will create or overwrite the file
-def storeAccounts(accounts, accountFileName="data/accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
-    """Writes a list of accounts as pretty formatted JSON to a file, file will be overwritten if it already exist
+def writeJson(data, fileName="data/accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
+    """Writes data (e.g. a list of accounts or chains) as pretty formatted JSON to a file, file will be overwritten if it already exist
 
     Parameters
     ----------
-    accounts : list[account]
-        a list of accounts loaded by account0000r
-    accountFileName : string, optional
+    data : object
+        a python object (e.g. list of accounts or chains) loaded by account0000r
+    fileName : string, optional
         filename to which to write, by default data is written to the data folder and the file is post-fixed with the current data and time
     """
-    file = open(accountFileName, "w")
-    prettyAccounts = json.dumps(accounts, indent=2)
-    file.write(prettyAccounts)
+    file = open(fileName, "w")
+    prettyData = json.dumps(data, indent=2)
+    file.write(prettyData)
     file.close()
-    return accountFileName
-
-
-
-def getBlockNumberByTime(timestamp, chains):
-    """Returns list of block numbers at a timestamp on various chains
-
-    Returns a list of block numbers that correspond to the timestamp passed as first parameter for all chains that are passed as the second argument. Doing binary search on blocks that are obtained via each chain's RPC API.
-
-    Parameters
-    ----------
-    timestamp : int
-        timestamp for which block numbers should be identified for each chain. The timestamp has to exist on each chain.
-    chains : list[chain]
-        list of chain objects that have "api" field with RPC endpoint and "name" field with the name of that chain
-
-    Returns
-    -------
-    list
-        a list of block numbers of each chain corresponding to timestamp, same order as the chains list
-    """
-
-    blockNos = []
-    for c in range(len(chains)):
-        chain = chains[c]
-        web3 = Web3(Web3.HTTPProvider(chain["api"]))
-        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        smallerBlock = web3.eth.get_block(1, False)
-        biggerBlock = web3.eth.get_block("latest")
-        if (timestamp < smallerBlock.timestamp):
-            print(f"Error: targer timestamp {timestamp} is earlier than the timestampe of block number 1 on {chain['name']} which is {smallerBlock.timestamp}")
-            return
-        elif (timestamp > biggerBlock.timestamp):
-            print(f"Error: target timestamp {timestamp} is later than the timestampe of the latest block (block number {biggerBlock.number}) on {chain['name']} which is {biggerBlock.timestamp}")
-            return
-        else:
-            while (True):
-                # print(f"{smallerBlock.number}:{smallerBlock.timestamp}")
-                # print(f"{biggerBlock.number}:{biggerBlock.timestamp}")
-                nextBlockNo = int((biggerBlock.number + smallerBlock.number) / 2)
-                nextBlock = web3.eth.get_block(nextBlockNo, False)
-                if (nextBlock.timestamp >= timestamp):
-                    if (nextBlock.number == biggerBlock.number):
-                        # print(f"we're close enough for a rounding error, quitting here")
-                        break;
-                    biggerBlock = nextBlock
-                else:
-                    if (nextBlock.number == smallerBlock.number):
-                        # print(f"we're close enough for a rounding error, quitting here")
-                        break;
-                    smallerBlock = nextBlock
-
-        print(f"block {nextBlock.number} happened at time {nextBlock.timestamp}")
-        blockNos.append(nextBlock.number)
-    return blockNos
+    return fileName
 
