@@ -143,3 +143,9 @@ def tabulateNonZeroNonce(accounts):
                 break
     print(table)
     printBinaryTable(table)
+
+
+
+def tabulateAllAccounts(accounts):
+    for a in accounts:
+        print(a["address"])

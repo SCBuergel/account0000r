@@ -1,54 +1,46 @@
 import json
 import account0000r
 from load0000rs import ethBalance, ethBalanceAtBlock, nonce, airdropOpApi, airdropHopApi, airdropHopJson, erc20BalanceAtBlock
-from analyz0000r import listAccountsNonZero, tableAccountsNonZeroBalance, listAccountsAirdropOP, listAccountsAirdropHop, listAllNonDustBalances, tabulateNonZeroNonce
+import analyz0000r
 import chainLoad0000rs
 
 
 
-### 1. INITIAL ACCOUNT CREATION
-# secrets = json.load(open("secrets.json"))
-# accounts = account0000r.accountsFromSecrets(secrets)
+"""
+### 1. DERIVE ACCOUNTS FROM SECRETS, FIND VOID ACCOUNTS, STORE, DISPLAY
+secrets = json.load(open("data/secrets.json"))
+accounts = account0000r.accountsFromSecrets(secrets)
+chains = json.load(open("data/chains.json"))
+accounts = account0000r.loadAccountMetadata([nonce.load0000r(), ethBalance.load0000r()], accounts, chains)
+account0000r.writeJson(accounts)
+analyz0000r.tabulateNonZeroNonce(accounts)
+analyz0000r.listAccountsNonZero(accounts)
+"""
 
 
 
-### 2. LOAD BASIC METADATA OF ACCOUNTS AND STORE IN FILE
-# accounts = account0000r.loadAccountMetadata([nonce.load0000r(), ethBalance.load0000r()], accounts)
-# account0000r.storeAccounts(accounts)
-
-
-
-
-### 3. RESTORE ACCOUNTS FROM FILE, LOAD MORE METADATA AND STORE AGAIN
-# some sample analysis
-#chains = json.load(open("chainsSmall-Enriched.json"))
-# chains = chains[4:]
-dataFile = "data/accounts-2022-12-13--00-41-45.json"
-#dataFile = "data/accountsBlank.json"
+"""
+### 2. OPEN ACCOUNTS, FIND EOY BLOCKS, LOAD EOY BALANCE, STORE, DISPLAY
+dataFile = "data/accounts-2022-12-28--02-16-55--removedZeroNonce.json"
 accounts = json.load(open(dataFile))
-#ldr = erc20BalanceAtBlock.load0000r()#ldr.analyze(accounts[13], chains[0])
-
-### LOAD CHAIN METADATA AND STORE AGAIN
-# endOf2021Timestamp = 1640991600
-# chainsEnriched = account0000r.loadChainMetadata([chainLoad0000rs.blockNumberByTimestamp(endOf2021Timestamp)], accounts, chains)
-# account0000r.writeJson(chainsEnriched, "chainsSmall-Enriched.json")
-
-
-#accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r(), erc20BalanceAtBlock.load0000r()], accounts, chains)
-#accounts = account0000r.loadAccountMetadata([airdropHopApi.load0000r()], accounts, chains)
-#outputFile = account0000r.writeJson(accounts)
-#print("stored output file ", outputFile)
-
-
-
-### 4. PRINT ANALYSIS ON ACCOUNT DATA
-# listAccountsNonZero(accounts)
-
-#listAccountsNonZero(accounts, "ETH balance at block")
-#listAllNonDustBalances(accounts)
+chains = json.load(open("data/chains.json"))
+endOf2021Timestamp = 1640991600
+chains = account0000r.loadChainMetadata([chainLoad0000rs.blockNumberByTimestamp(endOf2021Timestamp)], accounts, chains)
+account0000r.writeJson(chains, "data/chains-EOY2021.json")
+accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r(), erc20BalanceAtBlock.load0000r()], accounts, chains)
+account0000r.writeJson(accounts)
+analyz0000r.listAccountsNonZero(accounts, "ETH balance at block")
+analyz0000r.listAllNonDustBalances(accounts)
 """
-tableAccountsNonZeroBalance(accounts)
-listAccountsAirdropHop(accounts)
-listAccountsAirdropOP(accounts)
+
+
+
 """
-tabulateNonZeroNonce(accounts)
+### 3. OPEN ACCOUNTS, DISPLAY
+dataFile = "data/accounts-2022-12-28--05-07-18.json"
+accounts = json.load(open(dataFile))
+analyz0000r.listAccountsNonZero(accounts, "ETH balance at block")
+analyz0000r.listAllNonDustBalances(accounts)
+analyz0000r.tabulateAllAccounts(accounts)
+"""
+

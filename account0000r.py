@@ -65,12 +65,14 @@ def loadAccountMetadata(load0000rs, accounts, chains):
     """
 
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
-    for ci in range(len(chains)):
-        c = chains[ci]
-        for a in range(len(accounts)):
-            print(f"progress: {(ci * len(accounts) + a) / (len(chains) * len(accounts)) * 100:.2f}%")
-            address = accounts[a]["address"]
-            for load0000r in load0000rs:
+    for a in range(len(accounts)):
+        address = accounts[a]["address"]
+        for l in range(len(load0000rs)):
+            load0000r = load0000rs[l]
+            for ci in range(len(chains)):
+                progress = (a * len(chains) * len(load0000rs) + l * len(chains) + ci) / (len(accounts) * len(chains) * len(accounts)) * 100
+                c = chains[ci]
+                print(f"progress: {progress:.2f}% ({address} on {c['name']}, running {load0000r.name()}...)")
                 newEntry = load0000r.analyze(address, c)
                 if ("chains" not in accounts[a]):
                     accounts[a]["chains"] = {}
@@ -125,20 +127,16 @@ def accountsFromSecrets(secrets, accounts=None):
 
         # split the string hdPath into its elements and skip the first "m" element
         pathElements = hdPath.split("/")[1:]
-        for elem in pathElements:
-            # remove a potentially trailing "'"
-            numElem = elem.split("'")[0]
-            bip44_hdwallet.from_index(int(numElem), hardened=(elem.endswith("'")))
 
         # Get Ethereum BIP44HDWallet informations from address index
         for address_index in range(accountOffset, numAccounts + accountOffset):
             bip44_hdwallet.clean_derivation()
-            # Derivation from Ethereum BIP44 derivation
-            bip44_derivation: BIP44Derivation = BIP44Derivation(
-                    cryptocurrency=EthereumMainnet, account=0, change=False, address=address_index
-                    )
-            # Drive Ethereum BIP44HDWallet
-            bip44_hdwallet.from_path(path=bip44_derivation)
+            for elem in pathElements:
+                # remove a potentially trailing "'"
+                numElem = int(elem.split("'")[0])
+                bip44_hdwallet.from_index(numElem, hardened=(elem.endswith("'")))
+
+            bip44_hdwallet.from_index(address_index, False)
             address = bip44_hdwallet.address()
 
             # only append new entry if it's not on the account list already
@@ -149,8 +147,8 @@ def accountsFromSecrets(secrets, accounts=None):
                     "use": "",
                     "mnemonic": description,
                     "chains": {}
-                    })
-                return accounts
+                })
+    return accounts
 
 
 
