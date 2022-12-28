@@ -1,6 +1,7 @@
 from tabulate import tabulate
 import numpy as np
 from collections import defaultdict
+import pandas as pd
 
 
 
@@ -117,3 +118,28 @@ def listAccountsAirdropHop(accounts):
         if airdropAmount > 0:
             print(f'HOP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
 
+
+
+def listAllNonDustBalances(accounts):
+    ac = pd.DataFrame(accounts)
+    x = pd.DataFrame([
+    [ac.iloc[a]['address'], chainItems[0], token['balance'], token['name']]
+    for a in range(ac.shape[0])
+    for chainItems in ac.iloc[a]["chains"].items()
+    for token in chainItems[1]["ERC-20 balance at block"]["erc20Balances"]
+    if token['balance'] > 0
+    ])
+    print(x)
+    return x
+
+
+
+def tabulateNonZeroNonce(accounts):
+    table = []
+    for a in accounts:
+        for c in a["chains"].values():
+            if c["nonce"]["nonce"] > 0:
+                table.append([a["mnemonic"], a["index"]])
+                break
+    print(table)
+    printBinaryTable(table)

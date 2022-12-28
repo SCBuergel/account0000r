@@ -10,13 +10,8 @@ class load0000r(baseLoad0000r):
         return "0.0.1"
 
     def analyze(self, account, chain):
-        chains = json.load(open("chains.json"))
-        chainIndex = chains.index(chain)
-        blockNumbersEnd2021 = json.load(open("data/blockNumbersEnd2021.json"))
-        targetBlockNumber = blockNumbersEnd2021[chainIndex]
-
+        targetBlockNumber = chain["metadata"]["blockNumberByTimestamp"]["blockNumber"]
         web3 = Web3(Web3.HTTPProvider(chain["api"]))
-        tokenIndex = 18
         erc20BalanceABI = """[
         {"inputs":[{"internalType":"address","name":"tokenHolder","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"pure","type":"function"},
@@ -24,15 +19,25 @@ class load0000r(baseLoad0000r):
         {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}
         ]
         """
-        tokenAddress = chain["tokens"][tokenIndex]["address"]
-        erc20 = web3.eth.contract(address=tokenAddress, abi=erc20BalanceABI)
-        name = erc20.functions.name().call()
-        decimals = erc20.functions.decimals().call()
-        balance = erc20.functions.balanceOf(account["address"]).call(block_identifier=targetBlockNumber)
-        print(f"balance of {account['address']} is {balance/10**decimals} {name}s at block {targetBlockNumber}")
+        tokenBalances = []
+        for token in chain["tokens"]:
+            tokenAddress = token["address"]
+            
+            # check if token has been deployed by target block already, otherwise the erc20 calls would fail
+            code = web3.eth.get_code(tokenAddress, block_identifier=targetBlockNumber)
+            if (len(code) > 2):
+                erc20 = web3.eth.contract(address=tokenAddress, abi=erc20BalanceABI)
+                # name = erc20.functions.name().call()
+                decimals = int(erc20.functions.decimals().call())
+                balance = erc20.functions.balanceOf(account).call(block_identifier=targetBlockNumber) / 10**decimals
+            else:
+                balance = 0
+            tokenBalances.append({
+                    "name": token["name"],
+                    "balance": balance
+                })
+            print(f"balance of {account} is {balance} {token['name']} at block {targetBlockNumber}")
         newEntry = self.createEmptyAccountEntry()
-        newEntry["nativeBalance"] = balance
+        newEntry["erc20Balances"] = tokenBalances
         return newEntry
-
-
 

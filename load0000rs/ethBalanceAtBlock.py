@@ -10,16 +10,11 @@ class load0000r(baseLoad0000r):
         return "0.0.1"
 
     def analyze(self, account, chain):
-        chains = json.load(open("chains.json"))
-        chainIndex = chains.index(chain)
-        blockNumbersEnd2021 = json.load(open("data/blockNumbersEnd2021.json"))
-        targetBlockNumber = blockNumbersEnd2021[chainIndex]
+        targetBlockNumber = chain["metadata"]["blockNumberByTimestamp"]["blockNumber"]
 
         web3 = Web3(Web3.HTTPProvider(chain["api"]))
         balance = web3.eth.getBalance(account, targetBlockNumber)/1e18
         newEntry = self.createEmptyAccountEntry()
         newEntry["nativeBalance"] = balance
         return newEntry
-
-
 

@@ -19,6 +19,7 @@ class blockNumberByTimestamp(baseLoad0000r):
         web3.middleware_onion.inject(geth_poa_middleware, layer=0)
         smallerBlock = web3.eth.get_block(1, False)
         biggerBlock = web3.eth.get_block("latest", False)
+        print(f"Looking for timestamp {self.timestamp} on {chain['name']}")
         if (self.timestamp < smallerBlock.timestamp):
             print(f"Error: targer timestamp {self.timestamp} is earlier than the timestamp of block number 1 on {chain['name']} which is {smallerBlock.timestamp}")
             return
@@ -27,22 +28,22 @@ class blockNumberByTimestamp(baseLoad0000r):
             return
         else:
             while (True):
-                print(f"{smallerBlock.number}:{smallerBlock.timestamp}")
-                print(f"{biggerBlock.number}:{biggerBlock.timestamp}")
+                print(f"smaller block number: {smallerBlock.number}, timestamp: {smallerBlock.timestamp}")
+                print(f"bigger block number:  {biggerBlock.number}, timestamp: {biggerBlock.timestamp}")
                 nextBlockNo = int((biggerBlock.number + smallerBlock.number) / 2)
                 nextBlock = web3.eth.get_block(nextBlockNo, False)
                 if (nextBlock.timestamp >= self.timestamp):
                     if (nextBlock.number == biggerBlock.number):
-                        print(f"we're close enough for a rounding error, quitting here")
+                        print(f"we're close enough, quitting here")
                         break;
                     biggerBlock = nextBlock
                 else:
                     if (nextBlock.number == smallerBlock.number):
-                        print(f"we're close enough for a rounding error, quitting here")
+                        print(f"we're close enough, quitting here")
                         break;
                     smallerBlock = nextBlock
 
-        print(f"block {nextBlock.number} happened at time {nextBlock.timestamp}")
+        print(f"block {nextBlock.number} on {chain['name']} happened at time {nextBlock.timestamp}")
         return {
                   "timestamp": self.timestamp,
                   "blockNumber": nextBlock.number

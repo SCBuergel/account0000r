@@ -20,13 +20,13 @@ def loadChainMetadata(load0000rs, accounts, chains):
     accounts : list[account]
         List of accounts which are passed to the chain load0000r
     chains : list[chains]
-        List of chains for which each load0000r is run, each chain in the list is enriched with a load0000r result for each load0000r that is passed
+        List of chains for which each load0000r is run, each chain in the list is enriched with a metadata result for each load0000r that is passed
 
 
     Returns
     -------
     list
-        a list of accounts with the analysis results included for each account
+        a list of chains with the analysis results included for each chain
     """
 
     print("checking ", len(chains), " chains:")
