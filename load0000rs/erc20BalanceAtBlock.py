@@ -3,6 +3,9 @@ from web3 import Web3
 from load0000rs.base import baseLoad0000r
 
 class load0000r(baseLoad0000r):
+    def __init__(self, skipAnalysisIfEntryExists):
+        self._shouldSkipAnalysisIfEntryExists = skipAnalysisIfEntryExists
+
     def name(self):
         return "ERC-20 balance at block"
 

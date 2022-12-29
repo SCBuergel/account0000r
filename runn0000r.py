@@ -13,6 +13,7 @@ accounts = account0000r.accountsFromSecrets(secrets)
 chains = json.load(open("data/chains.json"))
 accounts = account0000r.loadAccountMetadata([nonce.load0000r(), ethBalance.load0000r()], accounts, chains)
 account0000r.writeJson(accounts)
+analyz0000r.tabulateAllAccounts(accounts)
 analyz0000r.tabulateNonZeroNonce(accounts)
 analyz0000r.listAccountsNonZero(accounts)
 """
@@ -37,10 +38,10 @@ analyz0000r.listAllNonDustBalances(accounts)
 
 """
 ### 3. OPEN ACCOUNTS, DISPLAY
-dataFile = "data/accounts-2022-12-28--05-07-18.json"
-accounts = json.load(open(dataFile))
-analyz0000r.listAccountsNonZero(accounts, "ETH balance at block")
-analyz0000r.listAllNonDustBalances(accounts)
-analyz0000r.tabulateAllAccounts(accounts)
 """
+dataFile = "data/accounts-2022-12-28--18-18-28--EOY2021.json"
+accounts = json.load(open(dataFile))
+df = analyz0000r.listAllNonDustBalances(accounts)
+csvOutputFile = "data/accountingEnd2021.csv"
+df.to_csv(csvOutputFile)
 

@@ -163,7 +163,11 @@
       {
       	"name": "cDAI",
       	"address": "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643"
-      }
+      },
+    	{
+    		"name": "COW",
+    		"address": "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+    	}
     ],
     "metadata": {
       "blockNumberByTimestamp": {
@@ -182,11 +186,36 @@
         "blockNumber": 19871949
       }
     },
-    "tokens": []
+    "tokens": [
+    	{
+    		"name": "xHOPR",
+    		"address": "0xD057604A14982FE8D88c5fC25Aac3267eA142a08"
+    	},
+    	{
+    		"name": "WETH",
+    		"address": "0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1"
+    	},
+    	{
+    		"name": "vCOW",
+    		"address": "0xc20C9C13E853fc64d054b73fF21d3636B2d97eaB"
+    	},
+    	{
+    		"name": "ESR",
+    		"address": "0xD3226B12e6188133b19Ac0419f34B0ed5B10f069"
+    	},
+    	{
+    		"name": "GNO",
+    		"address": "0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb"
+    	},
+    	{
+    		"name": "WXDAI",
+    		"address": "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
+    	}
+    ]
   },
   {
     "name": "BNB Smart Chain",
-    "api": "https://bsc-dataseed1.binance.org",
+    "api": "https://1rpc.io/bnb",
     "id": 56,
     "metadata": {
       "blockNumberByTimestamp": {
@@ -194,7 +223,12 @@
         "blockNumber": 13968460
       }
     },
-    "tokens": []
+    "tokens": [
+    	{
+    		"name": "ANY",
+    		"address": "0xF68C9Df95a18B2A5a5fa1124d79EEEffBaD0B6Fa"
+    	}
+    ]
   },
   {
     "name": "Polygon",
@@ -218,11 +252,64 @@
         "blockNumber": 4220545
       }
     },
-    "tokens": []
+    "tokens": [
+    	{
+    		"name": "WETH",
+    		"address": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+    	},
+    	{
+    		"name": "DODO",
+    		"address": "0x69Eb4FA4a2fbd498C257C57Ea8b7655a2559A581"
+    	},
+    	{
+    		"name": "SWPR",
+    		"address": "0xdE903E2712288A1dA82942DDdF2c20529565aC30"
+    	},
+    	{
+    		"name": "USDC",
+    		"address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+    	},
+    	{
+    		"name": "USDT",
+    		"address": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"
+    	},
+    	{
+    		"name": "UNI",
+    		"address": "0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0"
+    	},
+    	{
+    		"name": "SUSHI",
+    		"address": "0xd4d42F0b6DEF4CE0383636770eF773390d85c61A"
+    	},
+    	{
+    		"name": "ArbiNYAN",
+    		"address": "0xeD3fB761414DA74b74F33e5c5a1f78104b188DfC"
+    	},
+    	{
+    		"name": "ArbiAPE",
+    		"address": "0x7fE4B7933eD12f5b2f31F617363155d7aFF96ce8"
+    	},
+    	{
+    		"name": "aArbWETH",
+    		"address": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8"
+    	},
+    	{
+    		"name": "AFARM",
+    		"address": "0x2AE1EF41Cd23e3E77f75789E9393D8951705470F"
+    	},
+    	{
+    		"name": "variableDebtArbUSDT",
+    		"address": "0xfb00AC187a8Eb5AFAE4eACE434F493Eb62672df7"
+    	},
+    	{
+    		"name": "DAI",
+    		"address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+    	}
+    ]
   },
   {
     "name": "Optimism",
-    "api": "https://mainnet.optimism.io",
+    "api": "https://1rpc.io/op",
     "id": 10,
     "metadata": {
       "blockNumberByTimestamp": {
@@ -230,6 +317,27 @@
         "blockNumber": 1804890
       }
     },
-    "tokens": []
+    "tokens": [
+    	{
+    		"name": "OP",
+    		"address": "0x4200000000000000000000000000000000000042"
+    	},
+    	{
+    		"name": "USDT",
+    		"address": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"
+    	},
+    	{
+    		"name": "USDC",
+    		"address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607"
+    	},
+    	{
+    		"name": "sUSD",
+    		"address": "0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9"
+    	},
+    	{
+    		"name": "DAI",
+    		"address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+    	}
+    ]
   }
 ]

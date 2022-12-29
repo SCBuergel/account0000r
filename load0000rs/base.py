@@ -5,6 +5,10 @@ class baseLoad0000r(ABC):
     """Abstract base class from which other load0000r modules that implement analysis functionality are derived
     """
     
+    # set this property to true (e.g. in constructor of derived class) to avoid running the analysis again if an entry for the load0000r already exists
+    def __init__(self):
+        self._shouldSkipAnalysisIfEntryExists = False
+
     @abstractmethod
     def name(self):
         """The implementation function returns the name of the load0000r module
@@ -55,3 +59,18 @@ class baseLoad0000r(ABC):
             "version": self.version(),
             "lastRun": datetime.utcnow().strftime("%Y-%m-%d--%H-%M-%S")
             })
+
+    def skipAnalysisIfEntryExists(self, account, chain):
+        """Returns True if self._skipAnalysisIfEntryExists has been set and an entry in the account exists for the current load0000r
+        
+        Parameters
+        ----------
+        account
+            object with account data
+
+        Returns
+        -------
+        bool
+            True if the analysis should be skipped
+        """
+        return (self._shouldSkipAnalysisIfEntryExists and self.name() in account["chains"][chain["name"]].keys())

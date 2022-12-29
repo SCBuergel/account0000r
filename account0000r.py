@@ -70,16 +70,18 @@ def loadAccountMetadata(load0000rs, accounts, chains):
         for l in range(len(load0000rs)):
             load0000r = load0000rs[l]
             for ci in range(len(chains)):
-                progress = (a * len(chains) * len(load0000rs) + l * len(chains) + ci) / (len(accounts) * len(chains) * len(accounts)) * 100
+                progress = (a * len(chains) * len(load0000rs) + l * len(chains) + ci) / (len(accounts) * len(chains) * len(load0000rs)) * 100
                 c = chains[ci]
                 print(f"progress: {progress:.2f}% ({address} on {c['name']}, running {load0000r.name()}...)")
-                newEntry = load0000r.analyze(address, c)
                 if ("chains" not in accounts[a]):
                     accounts[a]["chains"] = {}
                 if (c["name"] not in accounts[a]["chains"]):
                     accounts[a]["chains"][c["name"]] = {}
-
-                accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
+                if (load0000r.skipAnalysisIfEntryExists(accounts[a], c)):
+                    print(f"skipping, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
+                else:
+                    newEntry = load0000r.analyze(address, c)
+                    accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
     return accounts
 
 

@@ -122,6 +122,12 @@ def listAccountsAirdropHop(accounts):
 
 def listAllNonDustBalances(accounts):
     ac = pd.DataFrame(accounts)
+    y = pd.DataFrame([
+    [ac.iloc[a]['address'], chainItems[0], chainItems[1]["ETH balance at block"]["nativeBalance"]]
+    for a in range(ac.shape[0])
+    for chainItems in ac.iloc[a]["chains"].items()
+    if chainItems[1]["ETH balance at block"]["nativeBalance"] > 0
+    ])
     x = pd.DataFrame([
     [ac.iloc[a]['address'], chainItems[0], token['balance'], token['name']]
     for a in range(ac.shape[0])
@@ -129,6 +135,7 @@ def listAllNonDustBalances(accounts):
     for token in chainItems[1]["ERC-20 balance at block"]["erc20Balances"]
     if token['balance'] > 0
     ])
+    x = x.append(y)
     print(x)
     return x
 
