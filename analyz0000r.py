@@ -120,24 +120,32 @@ def listAccountsAirdropHop(accounts):
 
 
 
-def listAllNonDustBalances(accounts):
+def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
     ac = pd.DataFrame(accounts)
-    y = pd.DataFrame([
-    [ac.iloc[a]['address'], chainItems[0], chainItems[1]["ETH balance at block"]["nativeBalance"]]
+    c = pd.DataFrame(chains)
+    coinLoad0000r = "ETH balance at block" if atBlock else "ETH balance"
+    tokenLoad0000r = "ERC-20 balance at block" if atBlock else "ERC-20 balance"
+    coinBalances = pd.DataFrame([
+    [ac.iloc[a]['address'], chainItems[0], chainItems[1][coinLoad0000r]["nativeBalance"], c[c.name == chainItems[0]].nativeAsset.to_string(index=False).strip()]
     for a in range(ac.shape[0])
     for chainItems in ac.iloc[a]["chains"].items()
-    if chainItems[1]["ETH balance at block"]["nativeBalance"] > 0
+    if chainItems[1][coinLoad0000r]["nativeBalance"] > dust
     ])
-    x = pd.DataFrame([
+
+    tokenBalances = pd.DataFrame([
     [ac.iloc[a]['address'], chainItems[0], token['balance'], token['name']]
     for a in range(ac.shape[0])
     for chainItems in ac.iloc[a]["chains"].items()
-    for token in chainItems[1]["ERC-20 balance at block"]["erc20Balances"]
-    if token['balance'] > 0
+    for token in chainItems[1][tokenLoad0000r]["erc20Balances"]
+    if token['balance'] > dust
     ])
-    x = x.append(y)
-    print(x)
-    return x
+
+    tokenBalances = tokenBalances.append(coinBalances)
+    tokenBalances.columns=[
+        "Address", "Chain", "Balance", "Asset"
+    ]
+    #print(tokenBalances)
+    return tokenBalances
 
 
 
@@ -156,3 +164,39 @@ def tabulateNonZeroNonce(accounts):
 def tabulateAllAccounts(accounts):
     for a in accounts:
         print(a["address"])
+
+
+
+def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPrices.csv"):
+    prices = pd.read_csv(assetPricesCsv, skipinitialspace=True)
+    accountBalances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
+    chainDf = pd.DataFrame(chains)
+    accountBalances = accountBalances.join(prices.set_index("Asset"), on="Asset")
+    accountValues = pd.DataFrame(accountBalances.Balance * accountBalances.Price)
+    accountBalances = pd.concat([accountBalances, accountValues], axis=1)
+    accountBalances.rename(columns = {list(accountBalances)[-1]: 'Value'}, inplace = True)
+    prettyBalances = accountBalances.copy()
+    prettyBalances.Value = prettyBalances.Value.map('${:,.2f}'.format)
+    
+    print(prettyBalances)
+    
+    valueByAsset = pd.DataFrame(accountBalances.groupby("Asset").sum())
+    valueByAsset.drop(["Price"], axis=1, inplace=True)
+    valueByAsset["Fiat value"] = valueByAsset.Value.map('${:,.2f}'.format)
+    valueByAsset["Total balance"] = valueByAsset.Balance.map('{:,.2f}'.format)
+    print(valueByAsset.sort_values(by="Value", ascending=False)[["Fiat value", "Total balance"]])
+
+    valueByAccount = pd.DataFrame(accountBalances.groupby("Address").sum())
+    valueByAccount.drop(["Price"], axis=1, inplace=True)
+    valueByAccount["Fiat value"] = valueByAccount.Value.map('${:,.2f}'.format)
+    print(valueByAccount.sort_values(by="Value", ascending=False)[["Fiat value"]])
+
+    print(f"Total portfolio value: {accountBalances.Balance.mul(accountBalances.Price).sum()}")
+    
+    print(f"Missing asset prices for: {np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())}")
+    return accountBalances
+
+def func(x, other):
+    otherValue = other.loc(x.Asset)
+    print(otherValue)
+    return otherValue

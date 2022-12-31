@@ -3,6 +3,7 @@
     "name": "Ethereum Main Net",
     "api": "https://eth.llamarpc.com",
     "id": 1,
+    "nativeAsset": "ETH",
     "tokens": [
       {
         "name": "TORN",
@@ -161,13 +162,49 @@
         "address": "0x6cAcDB97e3fC8136805a9E7c342d866ab77D0957"
       },
       {
+      	"name": "GAMMA",
+      	"address": "0x6BeA7CFEF803D1e3d5f7C0103f7ded065644e197"
+      },
+      {
+      	"name": "VISR",
+      	"address": "0xF938424F7210f31dF2Aee3011291b658f872e91e"
+      },
+      {
+      	"name": "wstETH",
+      	"address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+      },
+      {
+      	"name": "yvDAI",
+      	"address": "0x19D3364A399d251E894aC732651be8B0E4e85001"
+      },
+      {
+      	"name": "cCOMP",
+      	"address": "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4"
+      },
+      {
+      	"name": "cUNI",
+      	"address": "0x35A18000230DA775CAc24873d00Ff85BccdeD550"
+      },
+      {
       	"name": "cDAI",
       	"address": "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643"
       },
     	{
     		"name": "COW",
     		"address": "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
-    	}
+    	},
+      {
+      	"name": "LOVE",
+      	"address": "0x5380442d3C4EC4f5777f551f5EDD2FA0F691A27C"
+      },
+      {
+      	"name": "GEAR",
+      	"address": "0xBa3335588D9403515223F109EdC4eB7269a9Ab5D"
+      },
+      {
+      	"name": "OIL",
+      	"address": "0x0275E1001e293C46CFe158B3702AADe0B99f88a5"
+      }
     ],
     "metadata": {
       "blockNumberByTimestamp": {
@@ -180,6 +217,7 @@
     "name": "Gnosis Chain",
     "api": "https://rpc.ankr.com/gnosis",
     "id": 100,
+    "nativeAsset": "xDAI",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -190,6 +228,10 @@
     	{
     		"name": "xHOPR",
     		"address": "0xD057604A14982FE8D88c5fC25Aac3267eA142a08"
+    	},
+    	{
+    		"name": "wxHOPR",
+    		"address": "0xD4fdec44DB9D44B8f2b6d529620f9C0C7066A2c1"
     	},
     	{
     		"name": "WETH",
@@ -217,6 +259,7 @@
     "name": "BNB Smart Chain",
     "api": "https://1rpc.io/bnb",
     "id": 56,
+    "nativeAsset": "BNB",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -234,6 +277,7 @@
     "name": "Polygon",
     "api": "https://polygon.llamarpc.com",
     "id": 137,
+    "nativeAsset": "MATIC",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -244,8 +288,9 @@
   },
   {
     "name": "Arbitrum",
-    "api": "https://1rpc.io/arb",
+    "api": "https://rpc.ankr.com/arbitrum",
     "id": 42161,
+    "nativeAsset": "ETH",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -309,8 +354,9 @@
   },
   {
     "name": "Optimism",
-    "api": "https://1rpc.io/op",
+    "api": "https://rpc.ankr.com/optimism",
     "id": 10,
+    "nativeAsset": "ETH",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,

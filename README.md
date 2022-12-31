@@ -138,16 +138,31 @@ The following are optional fields with indicated default values:
 "description" (default: "")
 ```
 
-It also requires a `chains.json` file in the root directory with a list of chain names and RPC endpoints:
+It also requires a `chains.json` file in the root directory with a list of chain names, RPC provider, chain id, native asset name and list of tokens (can be an empty list) on that chain that account0000r can load:
 ```
 [
   {
     "name": "Ethereum Main Net",
-    "api": "https://rpc.ankr.com/eth"
+    "api": "https://eth.llamarpc.com",
+    "id": 1,
+    "nativeAsset": "ETH",
+    "tokens": [
+      {
+        "name": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      },
+      {
+        "name": "DAI",
+        "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+      }
+    ]
   },
   {
     "name": "Gnosis Chain",
-    "api": "https://rpc.ankr.com/gnosis"
+    "api": "https://rpc.ankr.com/gnosis",
+    "id": 100,
+    "nativeAsset": "xDAI",
+    "tokens": []
   }
 ]
 ```
