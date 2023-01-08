@@ -6,203 +6,203 @@
     "nativeAsset": "ETH",
     "tokens": [
       {
-        "name": "TORN",
-        "address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C"
-      },
-      {
-        "name": "WETH",
+        "symbol": "WETH",
         "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
       },
       {
-        "name": "DAI",
+        "symbol": "TORN",
+        "address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C"
+      },
+      {
+        "symbol": "DAI",
         "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
       },
       {
-        "name": "USDC",
+        "symbol": "USDC",
         "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
       },
       {
-        "name": "USDT",
+        "symbol": "USDT",
         "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
       },
       {
-        "name": "HOPR",
+        "symbol": "HOPR",
         "address": "0xF5581dFeFD8Fb0e4aeC526bE659CFaB1f8c781dA"
       },
       {
-        "name": "UNI",
+        "symbol": "UNI",
         "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
       },
       {
-        "name": "COMP",
+        "symbol": "COMP",
         "address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"
       },
       {
-        "name": "MKR",
+        "symbol": "MKR",
         "address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
       },
       {
-        "name": "AAVE",
+        "symbol": "AAVE",
         "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
       },
       {
-        "name": "LRC",
+        "symbol": "LRC",
         "address": "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD"
       },
       {
-        "name": "STAKE",
+        "symbol": "STAKE",
         "address": "0x0Ae055097C6d159879521C384F1D2123D1f195e6"
       },
       {
-        "name": "GNO",
+        "symbol": "GNO",
         "address": "0x6810e776880C02933D47DB1b9fc05908e5386b96"
       },
       {
-        "name": "SCRT",
+        "symbol": "WSCRT",
         "address": "0x2B89bF8ba858cd2FCee1faDa378D5cd6936968Be"
       },
       {
-        "name": "MATIC",
+        "symbol": "MATIC",
         "address": "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
       },
       {
-        "name": "stkAAVE",
+        "symbol": "stkAAVE",
         "address": "0x4da27a545c0c5B758a6BA100e3a049001de870f5"
       },
       {
-        "name": "stETH",
+        "symbol": "stETH",
         "address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"
       },
       {
-        "name": "BNB",
+        "symbol": "BNB",
         "address": "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"
       },
       {
-        "name": "ENS",
+        "symbol": "ENS",
         "address": "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72"
       },
       {
-        "name": "HOP",
+        "symbol": "HOP",
         "address": "0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC"
       },
       {
-        "name": "CRV",
+        "symbol": "CRV",
         "address": "0xD533a949740bb3306d119CC777fa900bA034cd52"
       },
       {
-        "name": "SNX",
+        "symbol": "SNX",
         "address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
       },
       {
-        "name": "BAL",
+        "symbol": "BAL",
         "address": "0xba100000625a3754423978a60c9317c58a424e3D"
       },
       {
-        "name": "FOAM",
+        "symbol": "FOAM",
         "address": "0x4946Fcea7C692606e8908002e55A582af44AC121"
       },
       {
-        "name": "1INCH",
+        "symbol": "1INCH",
         "address": "0x111111111117dC0aa78b770fA6A738034120C302"
       },
       {
-        "name": "cUSDT",
+        "symbol": "cUSDT",
         "address": "0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9"
       },
       {
-        "name": "cUSDC",
+        "symbol": "cUSDC",
         "address": "0x39AA39c021dfbaE8faC545936693aC917d5E7563"
       },
       {
-        "name": "sUSD",
+        "symbol": "sUSD",
         "address": "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51"
       },
       {
-        "name": "SAI",
+        "symbol": "SAI",
         "address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359"
       },
       {
-        "name": "AMB",
+        "symbol": "AMB",
         "address": "0x4DC3643DbC642b72C158E7F3d2ff232df61cb6CE"
       },
       {
-        "name": "SPANK",
+        "symbol": "SPANK",
         "address": "0x42d6622deCe394b54999Fbd73D108123806f6a18"
       },
       {
-        "name": "HEX",
+        "symbol": "HEX",
         "address": "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39"
       },
       {
-        "name": "cSAI",
+        "symbol": "cDAI",
         "address": "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC"
       },
       {
-        "name": "GTC",
+        "symbol": "GTC",
         "address": "0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F"
       },
       {
-        "name": "LEND",
+        "symbol": "LEND",
         "address": "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03"
       },
       {
-        "name": "VIO",
+        "symbol": "VIO",
         "address": "0x94fFb55Ce68231C5966ea8DAb16A8F066846513f"
       },
       {
-        "name": "UAC",
+        "symbol": "UAC",
         "address": "0x4297a285db467eB779FCc45F69A169bd8dCCd0e9"
       },
       {
-        "name": "GOT",
+        "symbol": "GOT",
         "address": "0x613Fa2A6e6DAA70c659060E86bA1443D2679c9D7"
       },
       {
-        "name": "SWPR",
+        "symbol": "SWPR",
         "address": "0x6cAcDB97e3fC8136805a9E7c342d866ab77D0957"
       },
       {
-      	"name": "GAMMA",
+      	"symbol": "GAMMA",
       	"address": "0x6BeA7CFEF803D1e3d5f7C0103f7ded065644e197"
       },
       {
-      	"name": "VISR",
+      	"symbol": "VISR",
       	"address": "0xF938424F7210f31dF2Aee3011291b658f872e91e"
       },
       {
-      	"name": "wstETH",
+      	"symbol": "wstETH",
       	"address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
       },
       {
-      	"name": "yvDAI",
+      	"symbol": "yvDAI",
       	"address": "0x19D3364A399d251E894aC732651be8B0E4e85001"
       },
       {
-      	"name": "cCOMP",
+      	"symbol": "cCOMP",
       	"address": "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4"
       },
       {
-      	"name": "cUNI",
+      	"symbol": "cUNI",
       	"address": "0x35A18000230DA775CAc24873d00Ff85BccdeD550"
       },
       {
-      	"name": "cDAI",
+      	"symbol": "cDAI",
       	"address": "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643"
       },
     	{
-    		"name": "COW",
+    		"symbol": "COW",
     		"address": "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
     	},
       {
-      	"name": "LOVE",
+      	"symbol": "LOVE",
       	"address": "0x5380442d3C4EC4f5777f551f5EDD2FA0F691A27C"
       },
       {
-      	"name": "GEAR",
+      	"symbol": "GEAR",
       	"address": "0xBa3335588D9403515223F109EdC4eB7269a9Ab5D"
       },
       {
-      	"name": "OIL",
+      	"symbol": "OIL",
       	"address": "0x0275E1001e293C46CFe158B3702AADe0B99f88a5"
       }
     ],
@@ -226,31 +226,31 @@
     },
     "tokens": [
     	{
-    		"name": "xHOPR",
+    		"symbol": "HOPR",
     		"address": "0xD057604A14982FE8D88c5fC25Aac3267eA142a08"
     	},
     	{
-    		"name": "wxHOPR",
+    		"symbol": "wxHOPR",
     		"address": "0xD4fdec44DB9D44B8f2b6d529620f9C0C7066A2c1"
     	},
     	{
-    		"name": "WETH",
+    		"symbol": "WETH",
     		"address": "0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1"
     	},
     	{
-    		"name": "vCOW",
+    		"symbol": "vCOW",
     		"address": "0xc20C9C13E853fc64d054b73fF21d3636B2d97eaB"
     	},
     	{
-    		"name": "ESR",
+    		"symbol": "ESR",
     		"address": "0xD3226B12e6188133b19Ac0419f34B0ed5B10f069"
     	},
     	{
-    		"name": "GNO",
+    		"symbol": "GNO",
     		"address": "0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb"
     	},
     	{
-    		"name": "WXDAI",
+    		"symbol": "WXDAI",
     		"address": "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
     	}
     ]
@@ -268,7 +268,7 @@
     },
     "tokens": [
     	{
-    		"name": "ANY",
+    		"symbol": "ANY",
     		"address": "0xF68C9Df95a18B2A5a5fa1124d79EEEffBaD0B6Fa"
     	}
     ]
@@ -299,55 +299,55 @@
     },
     "tokens": [
     	{
-    		"name": "WETH",
+    		"symbol": "WETH",
     		"address": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
     	},
     	{
-    		"name": "DODO",
+    		"symbol": "DODO",
     		"address": "0x69Eb4FA4a2fbd498C257C57Ea8b7655a2559A581"
     	},
     	{
-    		"name": "SWPR",
+    		"symbol": "SWPR",
     		"address": "0xdE903E2712288A1dA82942DDdF2c20529565aC30"
     	},
     	{
-    		"name": "USDC",
+    		"symbol": "USDC",
     		"address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
     	},
     	{
-    		"name": "USDT",
+    		"symbol": "USDT",
     		"address": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"
     	},
     	{
-    		"name": "UNI",
+    		"symbol": "UNI",
     		"address": "0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0"
     	},
     	{
-    		"name": "SUSHI",
+    		"symbol": "SUSHI",
     		"address": "0xd4d42F0b6DEF4CE0383636770eF773390d85c61A"
     	},
     	{
-    		"name": "ArbiNYAN",
+    		"symbol": "NYAN",
     		"address": "0xeD3fB761414DA74b74F33e5c5a1f78104b188DfC"
     	},
     	{
-    		"name": "ArbiAPE",
+    		"symbol": "APE",
     		"address": "0x7fE4B7933eD12f5b2f31F617363155d7aFF96ce8"
     	},
     	{
-    		"name": "aArbWETH",
+    		"symbol": "aArbWETH",
     		"address": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8"
     	},
     	{
-    		"name": "AFARM",
+    		"symbol": "AFARM",
     		"address": "0x2AE1EF41Cd23e3E77f75789E9393D8951705470F"
     	},
     	{
-    		"name": "variableDebtArbUSDT",
+    		"symbol": "variableDebtArbUSDT",
     		"address": "0xfb00AC187a8Eb5AFAE4eACE434F493Eb62672df7"
     	},
     	{
-    		"name": "DAI",
+    		"symbol": "DAI",
     		"address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
     	}
     ]
@@ -365,23 +365,23 @@
     },
     "tokens": [
     	{
-    		"name": "OP",
+    		"symbol": "OP",
     		"address": "0x4200000000000000000000000000000000000042"
     	},
     	{
-    		"name": "USDT",
+    		"symbol": "USDT",
     		"address": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"
     	},
     	{
-    		"name": "USDC",
+    		"symbol": "USDC",
     		"address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607"
     	},
     	{
-    		"name": "sUSD",
+    		"symbol": "sUSD",
     		"address": "0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9"
     	},
     	{
-    		"name": "DAI",
+    		"symbol": "DAI",
     		"address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
     	}
     ]

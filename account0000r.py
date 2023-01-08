@@ -7,6 +7,32 @@ from hdwallet.utils import generate_mnemonic
 #pip install hdwallet
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
+from load0000rs.singleErc20AtBlock import load0000r
+
+def generateTokenLoad0000rs(chains, metaLoad0000r):
+    """Generates singleErc20Load0000r instances from list of chains and adds the ERC20 decimals to all ERC20 load0000rs that are passed and makes sure that the token symbol matches what is stored on chain
+
+    Parameters
+    ----------
+    load0000rs : list[singleErc20AtBlock.load0000r]
+        list of ERC20 balance load0000rs
+
+    Returns
+    -------
+    list[singleErc20AtBlock.load0000r]
+        the list of load0000rs that now contains the decimals for each token on each chain
+    """
+    load0000rs = []
+    for c in range(len(chains)):
+        for t in range(len(chains[c]["tokens"])):
+            newLoad0000r = load0000r(False, chains[c], chains[c]["tokens"][t], metaLoad0000r)
+
+            load0000rs.append(newLoad0000r)
+
+            # update the token which now (latest) has decimals (and symbol checked)
+            chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
+    
+    return load0000rs, chains
 
 def loadChainMetadata(load0000rs, accounts, chains):
     """Takes a list of chains and returns them enriched with metadata obtained from a list of chain load0000rs that are passed
@@ -38,9 +64,21 @@ def loadChainMetadata(load0000rs, accounts, chains):
             if ("metadata" not in c):
                 print(f"adding new entry for \"metadata\" field")
                 chains[ci]["metadata"] = {}
-            if (load0000r.name() not in chains[ci]["metadata"]):
-                chains[ci]["metadata"][load0000r.name()] = {}
+
+            # this does not seem necessary - new entry can be added directly
+            # if (load0000r.name() not in chains[ci]["metadata"]):
+            #    chains[ci]["metadata"][load0000r.name()] = {}
+
+            metaLoad0000r = load0000r.metaLoad0000r
+            if (metaLoad0000r == {}):
+                print(f"{load0000r.name()} does not have a metaLoad0000r")
                 chains[ci]["metadata"][load0000r.name()] = newEntry
+            else:
+                print(f"{load0000r.name()} does have a metaLoad0000r: {metaLoad0000r.name()}")
+                if (metaLoad0000r.name() not in chains[ci]["metadata"]):
+                    chains[ci]["metadata"][metaLoad0000r.name()] = {}
+                chains[ci]["metadata"][metaLoad0000r.name()][load0000r.name()] = newEntry() 
+                # TODO: write to file (task 6) 
     return chains
 
 
@@ -81,7 +119,14 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                     print(f"skipping, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
                 else:
                     newEntry = load0000r.analyze(address, c)
-                    accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
+                    if (newEntry is not None):
+                        if (load0000r._metaLoad0000r != {}):
+                            metaName = load0000r._metaLoad0000r.name()
+                            if (metaName not in accounts[a]["chains"][c["name"]]):
+                                accounts[a]["chains"][c["name"]][metaName] = {}
+                            accounts[a]["chains"][c["name"]][metaName][load0000r.name()] = newEntry
+                        else:
+                            accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
     return accounts
 
 

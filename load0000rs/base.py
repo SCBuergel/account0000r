@@ -5,16 +5,26 @@ class baseLoad0000r(ABC):
     """Abstract base class from which other load0000r modules that implement analysis functionality are derived
     """
     
-    # set this property to true (e.g. in constructor of derived class) to avoid running the analysis again if an entry for the load0000r already exists
-    def __init__(self):
-        self._shouldSkipAnalysisIfEntryExists = False
+    def __new__(cls, *args, **kwargs):
+        r = object.__new__(cls)
+
+        # set this property to true (e.g. in constructor of derived class) to avoid running the analysis again if an entry for the load0000r already exists
+        r._shouldSkipAnalysisIfEntryExists = False
+        
+        # if the derived class is a childLoad0000r, reference its metaLoad0000r here (eg. in constructor)
+        r._metaLoad0000r = {}
+
+        # load0000rs that identify as this can be handled via VPN, HOPR or other privacy-preserving means to call remote APIs in a privacy-preserving fashion
+        r._callsRemoteApi = False
+
+        return r
 
     @abstractmethod
     def name(self):
         """The implementation function returns the name of the load0000r module
 
         Returns
-        -------
+        
         string
             Name of the derived load0000r module
         """

@@ -168,6 +168,20 @@ def tabulateAllAccounts(accounts):
 
 
 def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPrices.csv"):
+    """Prints portfolio value overview with all accounts, per asset, per account and total portfolio sum and a list of assets who are not priced in the the asset prices CSV file
+
+    Parameters
+    ----------
+    accounts : list[account]
+        a list of accounts loaded by account0000r
+    chains : list[chain]
+      	a list of chains loaded by account0000r
+    atBlock : bool, optional
+	reads account information with the "at block" load0000rs (for native coins and erc20 tokens)
+    assetPriceCsv : string, optional
+	CSV file name containing asset name and price (in USD)
+    """
+
     prices = pd.read_csv(assetPricesCsv, skipinitialspace=True)
     accountBalances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
     chainDf = pd.DataFrame(chains)
@@ -196,7 +210,3 @@ def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPri
     print(f"Missing asset prices for: {np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())}")
     return accountBalances
 
-def func(x, other):
-    otherValue = other.loc(x.Asset)
-    print(otherValue)
-    return otherValue
