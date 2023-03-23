@@ -56,7 +56,7 @@ class load0000r(baseLoad0000r):
         else:
             print(f"token {self.__token['symbol']} not deployed at block {targetBlockNumber} on chain {chain['name']}")
             balance = 0
-        print(f"balance of {account} is {balance} {self.__token['symbol']} at block {targetBlockNumber}")
+        # print(f"balance of {account} is {balance} {self.__token['symbol']} at block {targetBlockNumber}")
         newEntry = self.createEmptyAccountEntry()
         newEntry["erc20Balance"] = {
                     "symbol": self.__token["symbol"],

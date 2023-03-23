@@ -79,7 +79,13 @@ def tableAccountsNonZeroBalance(accounts, load0000r="ETH balance", dust=0):
     """
 
     print(f"Table of accounts with > {dust} {load0000r} per chain")
-    nonZeroBalanceAccounts = list([ad["mnemonic"], ad["index"]] for ad in accounts if sum(list(vi[load0000r]["nativeBalance"] for v in list(ad["chains"].values()))) > dust)
+    nonZeroBalanceAccounts = list(
+            [ad["mnemonic"], ad["index"]] 
+            for ad in accounts
+            if sum(
+                list(v[load0000r]["nativeBalance"]
+                for v in list(ad["chains"].values()))
+                ) > dust)
     printBinaryTable(nonZeroBalanceAccounts)
 
 
@@ -124,7 +130,7 @@ def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
     ac = pd.DataFrame(accounts)
     c = pd.DataFrame(chains)
     coinLoad0000r = "ETH balance at block" if atBlock else "ETH balance"
-    tokenLoad0000r = "ERC-20 balance at block" if atBlock else "ERC-20 balance"
+    tokenLoad0000r = "ERC20 balances"
     coinBalances = pd.DataFrame([
     [ac.iloc[a]['address'], chainItems[0], chainItems[1][coinLoad0000r]["nativeBalance"], c[c.name == chainItems[0]].nativeAsset.to_string(index=False).strip()]
     for a in range(ac.shape[0])
@@ -132,19 +138,17 @@ def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
     if chainItems[1][coinLoad0000r]["nativeBalance"] > dust
     ])
 
-    tokenBalances = pd.DataFrame([
-    [ac.iloc[a]['address'], chainItems[0], token['balance'], token['name']]
-    for a in range(ac.shape[0])
-    for chainItems in ac.iloc[a]["chains"].items()
-    for token in chainItems[1][tokenLoad0000r]["erc20Balances"]
-    if token['balance'] > dust
-    ])
-
-    tokenBalances = tokenBalances.append(coinBalances)
-    tokenBalances.columns=[
-        "Address", "Chain", "Balance", "Asset"
-    ]
-    #print(tokenBalances)
+    tokenBalances = pd.DataFrame()
+    for a in range(ac.shape[0]):
+        for chainItems in ac.iloc[a]["chains"].items():
+            if tokenLoad0000r in chainItems[1]:
+                for token in chainItems[1][tokenLoad0000r].values():
+                    if token["erc20Balance"]['balance'] > dust:
+                        tokenBalances = pd.concat([tokenBalances, pd.DataFrame([[ac.iloc[a]['address'], chainItems[0], token["erc20Balance"]['balance'], token['erc20Balance']['symbol']]])])
+    
+    tokenBalances = pd.concat([tokenBalances, coinBalances])
+    tokenBalances.columns = ["Address", "Chain", "Balance", "Asset"]
+    # print(tokenBalances)
     return tokenBalances
 
 

@@ -8,14 +8,19 @@ from hdwallet.utils import generate_mnemonic
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from load0000rs.singleErc20AtBlock import load0000r
+import random
 
-def generateTokenLoad0000rs(chains, metaLoad0000r):
+def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
     """Generates singleErc20Load0000r instances from list of chains and adds the ERC20 decimals to all ERC20 load0000rs that are passed and makes sure that the token symbol matches what is stored on chain
 
     Parameters
     ----------
-    load0000rs : list[singleErc20AtBlock.load0000r]
-        list of ERC20 balance load0000rs
+    chains : list
+        list of chains
+    metaLoad0000r : metaLoad0000r
+        metaload0000r which all the returned load0000rs reference
+    loadChainData : bool
+        can be set to False to speed up the process if the chain dictionary already contains the tokens and tokens 
 
     Returns
     -------
@@ -30,8 +35,9 @@ def generateTokenLoad0000rs(chains, metaLoad0000r):
             load0000rs.append(newLoad0000r)
 
             # update the token which now (latest) has decimals (and symbol checked)
-            chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
-    
+            if (loadChainData):
+                chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
+    random.shuffle(load0000rs) 
     return load0000rs, chains
 
 def loadChainMetadata(load0000rs, accounts, chains):
@@ -102,6 +108,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
         a list of accounts with the analysis results included for each account
     """
 
+    errors = []
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
     for a in range(len(accounts)):
         address = accounts[a]["address"]
@@ -110,7 +117,6 @@ def loadAccountMetadata(load0000rs, accounts, chains):
             for ci in range(len(chains)):
                 progress = (a * len(chains) * len(load0000rs) + l * len(chains) + ci) / (len(accounts) * len(chains) * len(load0000rs)) * 100
                 c = chains[ci]
-                print(f"progress: {progress:.2f}% ({address} on {c['name']}, running {load0000r.name()}...)")
                 if ("chains" not in accounts[a]):
                     accounts[a]["chains"] = {}
                 if (c["name"] not in accounts[a]["chains"]):
@@ -118,8 +124,16 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                 if (load0000r.skipAnalysisIfEntryExists(accounts[a], c)):
                     print(f"skipping, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
                 else:
-                    newEntry = load0000r.analyze(address, c)
+                    try:
+                        newEntry = load0000r.analyze(address, c)
+                    except Exception as e:
+                        error = f"ERROR loading {load0000r.name()} for {address} on {c['name']}, {e}"
+                        print(error)
+                        errors.append(error)
+                        continue
+
                     if (newEntry is not None):
+                        print(f"progress: {progress:.2f}% ({address} on {c['name']}, running {load0000r.name()}...)")
                         if (load0000r._metaLoad0000r != {}):
                             metaName = load0000r._metaLoad0000r.name()
                             if (metaName not in accounts[a]["chains"][c["name"]]):
@@ -127,6 +141,9 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                             accounts[a]["chains"][c["name"]][metaName][load0000r.name()] = newEntry
                         else:
                             accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
+    if (len(errors) > 0):
+        print(f"{len(errors)} errors:")
+        print(*errors, sep="\n")
     return accounts
 
 

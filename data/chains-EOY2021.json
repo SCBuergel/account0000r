@@ -1,7 +1,7 @@
 [
   {
     "name": "Ethereum Main Net",
-    "api": "https://eth.llamarpc.com",
+    "api": "https://rpc.payload.de",
     "id": 1,
     "nativeAsset": "ETH",
     "tokens": [
