@@ -29,7 +29,7 @@ Returns a list of BIP44 HD wallet Ethereum accounts with metadata from a mnemoni
 Only load mnemonics if you know what you are doing and on a computer that you fully trust. Otherwise all funds association with these mnemonics will be at risk.
 Alternatively, you can assemble the accounts.json file manually (see below for more information on how that file is structured).
 
-### 2. `account0000r.storeAccounts`
+### 2. `account0000r.writeJson`
 Stores the list of accounts and metadata.
 This file can be read at a later time for loading additional metadata of each account or add more accounts that are derived from mnemonic and passphrase
 
@@ -167,3 +167,17 @@ It also requires a `chains.json` file in the root directory with a list of chain
 ]
 ```
 
+## List of load0000rs
+load0000rs are loading account metadata. Often times (but not necessarily) this happens via RPC calls such as getting a native coin or ERC20 token balance. Several load0000rs currently exist and can be easily extended by writing your own (see above).
+
+### `nonce` load0000r
+Loads the nonce at the current block.
+
+## List of analyz0000rs
+analyz0000rs are analyzing account metadata. Often times the results are displayed in the terminal or written to a file. Several analyz0000rs currently exist and can be easily extended by writing your own (see above).
+
+### `tabulateAllAccounts`
+Prints a table of all accounts
+
+### `tabulateNonZeroNonce`
+Prints a binary table of accounts with non-zero nonces

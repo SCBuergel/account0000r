@@ -1,210 +1,173 @@
 [
   {
     "name": "Ethereum Main Net",
-    "api": "https://rpc.payload.de",
+    "api": "https://eth.llamarpc.com",
     "id": 1,
-    "nativeAsset": "ETH",
     "tokens": [
       {
-        "symbol": "WETH",
-        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-      },
-      {
-        "symbol": "TORN",
+        "name": "TORN",
         "address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C"
       },
       {
-        "symbol": "DAI",
+        "name": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      },
+      {
+        "name": "DAI",
         "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
       },
       {
-        "symbol": "USDC",
+        "name": "USDC",
         "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
       },
       {
-        "symbol": "USDT",
+        "name": "USDT",
         "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
       },
       {
-        "symbol": "HOPR",
+        "name": "HOPR",
         "address": "0xF5581dFeFD8Fb0e4aeC526bE659CFaB1f8c781dA"
       },
       {
-        "symbol": "UNI",
+        "name": "UNI",
         "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
       },
       {
-        "symbol": "COMP",
+        "name": "COMP",
         "address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"
       },
       {
-        "symbol": "MKR",
+        "name": "MKR",
         "address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
       },
       {
-        "symbol": "AAVE",
+        "name": "AAVE",
         "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
       },
       {
-        "symbol": "LRC",
+        "name": "LRC",
         "address": "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD"
       },
       {
-        "symbol": "STAKE",
+        "name": "STAKE",
         "address": "0x0Ae055097C6d159879521C384F1D2123D1f195e6"
       },
       {
-        "symbol": "GNO",
+        "name": "GNO",
         "address": "0x6810e776880C02933D47DB1b9fc05908e5386b96"
       },
       {
-        "symbol": "WSCRT",
+        "name": "SCRT",
         "address": "0x2B89bF8ba858cd2FCee1faDa378D5cd6936968Be"
       },
       {
-        "symbol": "MATIC",
+        "name": "MATIC",
         "address": "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
       },
       {
-        "symbol": "stkAAVE",
+        "name": "stkAAVE",
         "address": "0x4da27a545c0c5B758a6BA100e3a049001de870f5"
       },
       {
-        "symbol": "stETH",
+        "name": "stETH",
         "address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"
       },
       {
-        "symbol": "BNB",
+        "name": "BNB",
         "address": "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"
       },
       {
-        "symbol": "ENS",
+        "name": "ENS",
         "address": "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72"
       },
       {
-        "symbol": "HOP",
+        "name": "HOP",
         "address": "0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC"
       },
       {
-        "symbol": "CRV",
+        "name": "CRV",
         "address": "0xD533a949740bb3306d119CC777fa900bA034cd52"
       },
       {
-        "symbol": "SNX",
+        "name": "SNX",
         "address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
       },
       {
-        "symbol": "BAL",
+        "name": "BAL",
         "address": "0xba100000625a3754423978a60c9317c58a424e3D"
       },
       {
-        "symbol": "FOAM",
+        "name": "FOAM",
         "address": "0x4946Fcea7C692606e8908002e55A582af44AC121"
       },
       {
-        "symbol": "1INCH",
+        "name": "1INCH",
         "address": "0x111111111117dC0aa78b770fA6A738034120C302"
       },
       {
-        "symbol": "cUSDT",
+        "name": "cUSDT",
         "address": "0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9"
       },
       {
-        "symbol": "cUSDC",
+        "name": "cUSDC",
         "address": "0x39AA39c021dfbaE8faC545936693aC917d5E7563"
       },
       {
-        "symbol": "sUSD",
+        "name": "sUSD",
         "address": "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51"
       },
       {
-        "symbol": "SAI",
+        "name": "SAI",
         "address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359"
       },
       {
-        "symbol": "AMB",
+        "name": "AMB",
         "address": "0x4DC3643DbC642b72C158E7F3d2ff232df61cb6CE"
       },
       {
-        "symbol": "SPANK",
+        "name": "SPANK",
         "address": "0x42d6622deCe394b54999Fbd73D108123806f6a18"
       },
       {
-        "symbol": "HEX",
+        "name": "HEX",
         "address": "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39"
       },
       {
-        "symbol": "cDAI",
+        "name": "cSAI",
         "address": "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC"
       },
       {
-        "symbol": "GTC",
+        "name": "GTC",
         "address": "0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F"
       },
       {
-        "symbol": "LEND",
+        "name": "LEND",
         "address": "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03"
       },
       {
-        "symbol": "VIO",
+        "name": "VIO",
         "address": "0x94fFb55Ce68231C5966ea8DAb16A8F066846513f"
       },
       {
-        "symbol": "UAC",
+        "name": "UAC",
         "address": "0x4297a285db467eB779FCc45F69A169bd8dCCd0e9"
       },
       {
-        "symbol": "GOT",
+        "name": "GOT",
         "address": "0x613Fa2A6e6DAA70c659060E86bA1443D2679c9D7"
       },
       {
-        "symbol": "SWPR",
+        "name": "SWPR",
         "address": "0x6cAcDB97e3fC8136805a9E7c342d866ab77D0957"
       },
       {
-      	"symbol": "GAMMA",
-      	"address": "0x6BeA7CFEF803D1e3d5f7C0103f7ded065644e197"
-      },
-      {
-      	"symbol": "VISR",
-      	"address": "0xF938424F7210f31dF2Aee3011291b658f872e91e"
-      },
-      {
-      	"symbol": "wstETH",
-      	"address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
-      },
-      {
-      	"symbol": "yvDAI",
-      	"address": "0x19D3364A399d251E894aC732651be8B0E4e85001"
-      },
-      {
-      	"symbol": "cCOMP",
-      	"address": "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4"
-      },
-      {
-      	"symbol": "cUNI",
-      	"address": "0x35A18000230DA775CAc24873d00Ff85BccdeD550"
-      },
-      {
-      	"symbol": "cDAI",
+      	"name": "cDAI",
       	"address": "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643"
       },
     	{
-    		"symbol": "COW",
+    		"name": "COW",
     		"address": "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
-    	},
-      {
-      	"symbol": "LOVE",
-      	"address": "0x5380442d3C4EC4f5777f551f5EDD2FA0F691A27C"
-      },
-      {
-      	"symbol": "GEAR",
-      	"address": "0xBa3335588D9403515223F109EdC4eB7269a9Ab5D"
-      },
-      {
-      	"symbol": "OIL",
-      	"address": "0x0275E1001e293C46CFe158B3702AADe0B99f88a5"
-      }
+    	}
     ],
     "metadata": {
       "blockNumberByTimestamp": {
@@ -217,7 +180,6 @@
     "name": "Gnosis Chain",
     "api": "https://rpc.ankr.com/gnosis",
     "id": 100,
-    "nativeAsset": "xDAI",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -226,31 +188,27 @@
     },
     "tokens": [
     	{
-    		"symbol": "HOPR",
+    		"name": "xHOPR",
     		"address": "0xD057604A14982FE8D88c5fC25Aac3267eA142a08"
     	},
     	{
-    		"symbol": "wxHOPR",
-    		"address": "0xD4fdec44DB9D44B8f2b6d529620f9C0C7066A2c1"
-    	},
-    	{
-    		"symbol": "WETH",
+    		"name": "WETH",
     		"address": "0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1"
     	},
     	{
-    		"symbol": "vCOW",
+    		"name": "vCOW",
     		"address": "0xc20C9C13E853fc64d054b73fF21d3636B2d97eaB"
     	},
     	{
-    		"symbol": "ESR",
+    		"name": "ESR",
     		"address": "0xD3226B12e6188133b19Ac0419f34B0ed5B10f069"
     	},
     	{
-    		"symbol": "GNO",
+    		"name": "GNO",
     		"address": "0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb"
     	},
     	{
-    		"symbol": "WXDAI",
+    		"name": "WXDAI",
     		"address": "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
     	}
     ]
@@ -259,7 +217,6 @@
     "name": "BNB Smart Chain",
     "api": "https://1rpc.io/bnb",
     "id": 56,
-    "nativeAsset": "BNB",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -268,7 +225,7 @@
     },
     "tokens": [
     	{
-    		"symbol": "ANY",
+    		"name": "ANY",
     		"address": "0xF68C9Df95a18B2A5a5fa1124d79EEEffBaD0B6Fa"
     	}
     ]
@@ -277,7 +234,6 @@
     "name": "Polygon",
     "api": "https://polygon.llamarpc.com",
     "id": 137,
-    "nativeAsset": "MATIC",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -288,9 +244,8 @@
   },
   {
     "name": "Arbitrum",
-    "api": "https://rpc.ankr.com/arbitrum",
+    "api": "https://1rpc.io/arb",
     "id": 42161,
-    "nativeAsset": "ETH",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -299,64 +254,63 @@
     },
     "tokens": [
     	{
-    		"symbol": "WETH",
+    		"name": "WETH",
     		"address": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
     	},
     	{
-    		"symbol": "DODO",
+    		"name": "DODO",
     		"address": "0x69Eb4FA4a2fbd498C257C57Ea8b7655a2559A581"
     	},
     	{
-    		"symbol": "SWPR",
+    		"name": "SWPR",
     		"address": "0xdE903E2712288A1dA82942DDdF2c20529565aC30"
     	},
     	{
-    		"symbol": "USDC",
+    		"name": "USDC",
     		"address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
     	},
     	{
-    		"symbol": "USDT",
+    		"name": "USDT",
     		"address": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"
     	},
     	{
-    		"symbol": "UNI",
+    		"name": "UNI",
     		"address": "0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0"
     	},
     	{
-    		"symbol": "SUSHI",
+    		"name": "SUSHI",
     		"address": "0xd4d42F0b6DEF4CE0383636770eF773390d85c61A"
     	},
     	{
-    		"symbol": "NYAN",
+    		"name": "ArbiNYAN",
     		"address": "0xeD3fB761414DA74b74F33e5c5a1f78104b188DfC"
     	},
     	{
-    		"symbol": "APE",
+    		"name": "ArbiAPE",
     		"address": "0x7fE4B7933eD12f5b2f31F617363155d7aFF96ce8"
     	},
     	{
-    		"symbol": "aArbWETH",
+    		"name": "aArbWETH",
     		"address": "0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8"
     	},
     	{
-    		"symbol": "AFARM",
+    		"name": "AFARM",
     		"address": "0x2AE1EF41Cd23e3E77f75789E9393D8951705470F"
     	},
     	{
-    		"symbol": "variableDebtArbUSDT",
+    		"name": "variableDebtArbUSDT",
     		"address": "0xfb00AC187a8Eb5AFAE4eACE434F493Eb62672df7"
     	},
     	{
-    		"symbol": "DAI",
+    		"name": "DAI",
     		"address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
     	}
     ]
   },
   {
     "name": "Optimism",
-    "api": "https://rpc.ankr.com/optimism",
+    "api": "https://1rpc.io/op",
     "id": 10,
-    "nativeAsset": "ETH",
     "metadata": {
       "blockNumberByTimestamp": {
         "timestamp": 1640991600,
@@ -365,23 +319,23 @@
     },
     "tokens": [
     	{
-    		"symbol": "OP",
+    		"name": "OP",
     		"address": "0x4200000000000000000000000000000000000042"
     	},
     	{
-    		"symbol": "USDT",
+    		"name": "USDT",
     		"address": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"
     	},
     	{
-    		"symbol": "USDC",
+    		"name": "USDC",
     		"address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607"
     	},
     	{
-    		"symbol": "sUSD",
+    		"name": "sUSD",
     		"address": "0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9"
     	},
     	{
-    		"symbol": "DAI",
+    		"name": "DAI",
     		"address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
     	}
     ]

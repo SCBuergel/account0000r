@@ -6,17 +6,17 @@ import chainLoad0000rs
 
 
 
-"""
 ### 1. DERIVE ACCOUNTS FROM SECRETS, FIND VOID ACCOUNTS, STORE, DISPLAY
+print ("loading secrets and chains...")
 secrets = json.load(open("data/secrets.json"))
 accounts = account0000r.accountsFromSecrets(secrets)
 chains = json.load(open("data/chains.json"))
-accounts = account0000r.loadAccountMetadata([nonce.load0000r(), ethBalance.load0000r()], accounts, chains)
+print("loading account metadata...")
+accounts = account0000r.loadAccountMetadata([nonce.load0000r()], accounts, chains)
 account0000r.writeJson(accounts)
 analyz0000r.tabulateAllAccounts(accounts)
 analyz0000r.tabulateNonZeroNonce(accounts)
 analyz0000r.listAccountsNonZero(accounts)
-"""
 
 
 
@@ -56,9 +56,8 @@ TODO
 
 ### 3. OPEN ACCOUNTS, DISPLAY
 
-chains = json.load(open("data/chains-EOY2021-decimals.json"))
-dataFile0 = "data/accounts-2022-12-28--18-18-28--EOY2021.json"
-dataFile1 = "data/accounts-2023-02-10--18-28-28--hard-EOY2021.json"
+chains = json.load(open("data/chains-EOY2021.json"))
+dataFile0 = "data/accounts-blank.json"
 accounts0 = json.load(open(dataFile0))
 accounts1 = json.load(open(dataFile1))
 accounts = [*accounts0, *accounts1]
