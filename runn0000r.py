@@ -7,16 +7,22 @@ import chainLoad0000rs
 
 
 ### 1. DERIVE ACCOUNTS FROM SECRETS, FIND VOID ACCOUNTS, STORE, DISPLAY
-print ("loading secrets and chains...")
+print("loading secrets and chains...")
 secrets = json.load(open("data/secrets.json"))
 accounts = account0000r.accountsFromSecrets(secrets)
-chains = json.load(open("data/chains.json"))
+#accounts = json.load(open("data/accounts-2023-07-08--14-07-51.json"))
+chains = json.load(open("data/chains-EOY2021.json"))
+
 print("loading account metadata...")
 accounts = account0000r.loadAccountMetadata([nonce.load0000r()], accounts, chains)
+
+print("writing json...")
 account0000r.writeJson(accounts)
-analyz0000r.tabulateAllAccounts(accounts)
+
+print("printing results...")
+#analyz0000r.tabulateAllAccounts(accounts)
 analyz0000r.tabulateNonZeroNonce(accounts)
-analyz0000r.listAccountsNonZero(accounts)
+#analyz0000r.listAccountsNonZero(accounts)
 
 
 
@@ -56,15 +62,15 @@ TODO
 
 ### 3. OPEN ACCOUNTS, DISPLAY
 
-chains = json.load(open("data/chains-EOY2021.json"))
-dataFile0 = "data/accounts-blank.json"
-accounts0 = json.load(open(dataFile0))
-accounts1 = json.load(open(dataFile1))
-accounts = [*accounts0, *accounts1]
-df = analyz0000r.listAllNonDustBalances(accounts, chains, atBlock=True)
+#chains = json.load(open("data/chains-EOY2021.json"))
+#dataFile0 = "data/accounts-blank.json"
+#accounts0 = json.load(open(dataFile0))
+#accounts1 = json.load(open(dataFile1))
+#accounts = [*accounts0, *accounts1]
+#df = analyz0000r.listAllNonDustBalances(accounts, chains, atBlock=True)
 
-accountBalances = analyz0000r.portfolioValue(accounts, chains, atBlock=True)
-print(accountBalances)
+#accountBalances = analyz0000r.portfolioValue(accounts, chains, atBlock=True)
+#print(accountBalances)
 #csvOutputFile = "data/accountingEnd2021.csv"
 #df.to_csv(csvOutputFile)
 #analyz0000r.tableAccountsNonZeroBalance(accounts, load0000r="ETH balance at block")

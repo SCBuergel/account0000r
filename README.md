@@ -13,6 +13,15 @@ account0000r lets you check EVM accounts accross chains. It keeps a local record
 ![The account0000r Wojak meme](https://github.com/SCBuergel/account0000r/blob/main/TheAccount0000r.png?raw=true "The account0000r")
 
 
+## Prerequisites
+account0000r expects a local python installation. I recommend [`pyenv`](https://github.com/pyenv/pyenv-installer) for that and have [automated](https://github.com/SCBuergel/SEQS) the installation of that setup for my QubesOS.
+
+Install the required packages via
+```
+pip install -r requirements.txt
+```
+
+
 
 ## Usage
 
@@ -180,4 +189,30 @@ analyz0000rs are analyzing account metadata. Often times the results are display
 Prints a table of all accounts
 
 ### `tabulateNonZeroNonce`
-Prints a binary table of accounts with non-zero nonces
+Prints a binary table of accounts with non-zero nonces, sorted by mnemonic and index
+```
+╒═════════╤════════╤════════╤════════╤════════╕
+│   index │ mnem 1 │ work   │ fam    │ aping  │
+│         │        │ stuff  │        │ 2021   │
+╞═════════╪════════╪════════╪════════╪════════╡
+│       0 │ X      │ X      │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       1 │ X      │ X      │        │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       2 │        │ X      │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       3 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       4 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       5 │        │        │        │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       6 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       7 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       8 │        │        │        │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       9 │        │        │        │ X      │
+╘═════════╧════════╧════════╧════════╧════════╛
+```
