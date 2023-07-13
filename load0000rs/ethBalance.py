@@ -10,10 +10,7 @@ class load0000r(baseLoad0000r):
 
     def analyze(self, account, chain):
         web3 = Web3(Web3.HTTPProvider(chain["api"]))
-        balance = web3.eth.getBalance(account)/1e18
+        balance = web3.eth.get_balance(account)/1e18
         newEntry = self.createEmptyAccountEntry()
         newEntry["nativeBalance"] = balance
         return newEntry
-
-
-

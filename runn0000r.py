@@ -8,20 +8,26 @@ import chainLoad0000rs
 
 ### 1. DERIVE ACCOUNTS FROM SECRETS, FIND VOID ACCOUNTS, STORE, DISPLAY
 print("loading secrets and chains...")
-secrets = json.load(open("data/secrets.json"))
-accounts = account0000r.accountsFromSecrets(secrets)
-#accounts = json.load(open("data/accounts-2023-07-08--14-07-51.json"))
-chains = json.load(open("data/chains-EOY2021.json"))
+#secrets = json.load(open("data/secrets.json"))
+#accounts = account0000r.accountsFromSecrets(secrets)
+#accounts0 = json.load(open("data/accounts-2022-07-06--21-50-57--hard.json"))
+#accounts1 = json.load(open("data/accounts-2023-07-08--15-10-33.json"))
+#accounts = [*accounts0, *accounts1]
 
-print("loading account metadata...")
-accounts = account0000r.loadAccountMetadata([nonce.load0000r()], accounts, chains)
+#accounts = json.load(open("data/accounts-2023-07-09--09-40-37.json"))
+accounts = json.load(open("data/accounts-2023-07-09--21-37-06.json"))
+chains = json.load(open("data/chains-EOY2021-decimals-noKraken.json"))
 
-print("writing json...")
-account0000r.writeJson(accounts)
+#print("loading account metadata...")
+#accounts = account0000r.loadAccountMetadata([nonce.load0000r()], accounts, chains)
+
+#print("writing json...")
+#account0000r.writeJson(accounts)
 
 print("printing results...")
+#analyz0000r.listAccountsNonZero(accounts, load0000r="ETH balance at block", dust=0.01)
 #analyz0000r.tabulateAllAccounts(accounts)
-analyz0000r.tabulateNonZeroNonce(accounts)
+#analyz0000r.tabulateNonZeroNonce(accounts)
 #analyz0000r.listAccountsNonZero(accounts)
 
 
@@ -35,13 +41,15 @@ analyz0000r.tabulateNonZeroNonce(accounts)
 #metaErc20 = metaLoad0000rErc20.load0000r()
 #erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=False)
 #account0000r.writeJson(chains, "data/chains-EOY2021-decimals.json")
-#accounts = account0000r.loadAccountMetadata(erc20Load0000rs, accounts, chains, )
-#accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains, )
+#accounts, errors = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r(), *erc20Load0000rs], accounts, chains)
+#accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
 #account0000r.writeJson(accounts)
-#accountBalances = analyz0000r.portfolioValue(accounts, chains, atBlock=False)
-#csvOutputFile = "data/hard-accountingEnd2021.csv"
-#accountBalances.to_csv(csvOutputFile)
 
+#accounts = json.load(open("data/accounts-2023-07-09--09-40-37.json"))
+accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
+#csvOutputFile = "data/new-accountingEnd2021.csv"
+#accountBalances.to_csv(csvOutputFile)
+#errors.to_csv("data/errors.csv")
 
 
 """

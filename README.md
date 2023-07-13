@@ -13,11 +13,13 @@ account0000r lets you check EVM accounts accross chains. It keeps a local record
 ![The account0000r Wojak meme](https://github.com/SCBuergel/account0000r/blob/main/TheAccount0000r.png?raw=true "The account0000r")
 
 
+
 ## Prerequisites
 account0000r expects a local python installation. I recommend [`pyenv`](https://github.com/pyenv/pyenv-installer) for that and have [automated](https://github.com/SCBuergel/SEQS) the installation of that setup for my QubesOS.
 
-Install the required packages via
+Install Python 3.11 and the required packages via
 ```
+pyenv local 3.11
 pip install -r requirements.txt
 ```
 
@@ -216,3 +218,16 @@ Prints a binary table of accounts with non-zero nonces, sorted by mnemonic and i
 │       9 │        │        │        │ X      │
 ╘═════════╧════════╧════════╧════════╧════════╛
 ```
+
+## Utils
+Some utils do not fit into a generalized structure yet and are described here
+
+## `account0000r.generateTokenLoad0000rs`
+Is used before the actual `loadAccountMetadata` step to e.g. generate the erc20Load0000rs and erc20 token data (decimals, name, symbol).
+It is typically called like this:
+```
+erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=False)
+```
+the last parameter can be set to False to not actually load any on-chain data (e.g. if the chains object already contains everything that is needed and only the erc20Load0000rs need to be regenerated).
+
+This step is preparing a list of `singleErc20AtBlock` load0000rs for each token that is referenced in the chain.
