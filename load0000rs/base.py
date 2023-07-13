@@ -83,4 +83,8 @@ class baseLoad0000r(ABC):
         bool
             True if the analysis should be skipped
         """
-        return (self._shouldSkipAnalysisIfEntryExists and self.name() in account["chains"][chain["name"]].keys())
+        return (self._shouldSkipAnalysisIfEntryExists and 
+                (self.name() in account["chains"][chain["name"]].keys() 
+                    or (self._metaLoad0000r != {} 
+                        and self._metaLoad0000r.name() in account["chains"][chain["name"]]
+                        and self.name() in account["chains"][chain["name"]][self._metaLoad0000r.name()].keys())))

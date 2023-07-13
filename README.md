@@ -14,6 +14,17 @@ account0000r lets you check EVM accounts accross chains. It keeps a local record
 
 
 
+## Prerequisites
+account0000r expects a local python installation. I recommend [`pyenv`](https://github.com/pyenv/pyenv-installer) for that and have [automated](https://github.com/SCBuergel/SEQS) the installation of that setup for my QubesOS.
+
+Install Python 3.11 and the required packages via
+```
+pyenv local 3.11
+pip install -r requirements.txt
+```
+
+
+
 ## Usage
 
 account0000r comprises a set of Python tools to derive accounts, load metadata of accounts and analyze them. 
@@ -29,7 +40,7 @@ Returns a list of BIP44 HD wallet Ethereum accounts with metadata from a mnemoni
 Only load mnemonics if you know what you are doing and on a computer that you fully trust. Otherwise all funds association with these mnemonics will be at risk.
 Alternatively, you can assemble the accounts.json file manually (see below for more information on how that file is structured).
 
-### 2. `account0000r.storeAccounts`
+### 2. `account0000r.writeJson`
 Stores the list of accounts and metadata.
 This file can be read at a later time for loading additional metadata of each account or add more accounts that are derived from mnemonic and passphrase
 
@@ -167,3 +178,56 @@ It also requires a `chains.json` file in the root directory with a list of chain
 ]
 ```
 
+## List of load0000rs
+load0000rs are loading account metadata. Often times (but not necessarily) this happens via RPC calls such as getting a native coin or ERC20 token balance. Several load0000rs currently exist and can be easily extended by writing your own (see above).
+
+### `nonce` load0000r
+Loads the nonce at the current block.
+
+## List of analyz0000rs
+analyz0000rs are analyzing account metadata. Often times the results are displayed in the terminal or written to a file. Several analyz0000rs currently exist and can be easily extended by writing your own (see above).
+
+### `tabulateAllAccounts`
+Prints a table of all accounts
+
+### `tabulateNonZeroNonce`
+Prints a binary table of accounts with non-zero nonces, sorted by mnemonic and index
+```
+╒═════════╤════════╤════════╤════════╤════════╕
+│   index │ mnem 1 │ work   │ fam    │ aping  │
+│         │        │ stuff  │        │ 2021   │
+╞═════════╪════════╪════════╪════════╪════════╡
+│       0 │ X      │ X      │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       1 │ X      │ X      │        │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       2 │        │ X      │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       3 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       4 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       5 │        │        │        │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       6 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       7 │        │        │ X      │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       8 │        │        │        │ X      │
+├─────────┼────────┼────────┼────────┼────────┤
+│       9 │        │        │        │ X      │
+╘═════════╧════════╧════════╧════════╧════════╛
+```
+
+## Utils
+Some utils do not fit into a generalized structure yet and are described here
+
+## `account0000r.generateTokenLoad0000rs`
+Is used before the actual `loadAccountMetadata` step to e.g. generate the erc20Load0000rs and erc20 token data (decimals, name, symbol).
+It is typically called like this:
+```
+erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=False)
+```
+the last parameter can be set to False to not actually load any on-chain data (e.g. if the chains object already contains everything that is needed and only the erc20Load0000rs need to be regenerated).
+
+This step is preparing a list of `singleErc20AtBlock` load0000rs for each token that is referenced in the chain.

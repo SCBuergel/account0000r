@@ -1,4 +1,5 @@
 *.swp
+*.swo
 secrets.json
 accounts-*.json
 

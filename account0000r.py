@@ -20,7 +20,7 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
     metaLoad0000r : metaLoad0000r
         metaload0000r which all the returned load0000rs reference
     loadChainData : bool
-        can be set to False to speed up the process if the chain dictionary already contains the tokens and tokens 
+        can be set to False to speed up the process if the chain dictionary already contains the tokens and token metadata (decimals, name, symbol checked) 
 
     Returns
     -------
@@ -30,7 +30,7 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
     load0000rs = []
     for c in range(len(chains)):
         for t in range(len(chains[c]["tokens"])):
-            newLoad0000r = load0000r(False, chains[c], chains[c]["tokens"][t], metaLoad0000r)
+            newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r)
 
             load0000rs.append(newLoad0000r)
 
@@ -122,7 +122,11 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                 if (c["name"] not in accounts[a]["chains"]):
                     accounts[a]["chains"][c["name"]] = {}
                 if (load0000r.skipAnalysisIfEntryExists(accounts[a], c)):
-                    print(f"skipping, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
+                    if (load0000r._metaLoad0000r != {}):
+                        print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r._metaLoad0000r.name()][load0000r.name()]['lastRun']}")
+                    else:
+                        print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
+
                 else:
                     try:
                         newEntry = load0000r.analyze(address, c)
@@ -144,7 +148,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
     if (len(errors) > 0):
         print(f"{len(errors)} errors:")
         print(*errors, sep="\n")
-    return accounts
+    return accounts, errors
 
 
 

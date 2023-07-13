@@ -196,18 +196,18 @@ def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPri
     prettyBalances = accountBalances.copy()
     prettyBalances.Value = prettyBalances.Value.map('${:,.2f}'.format)
     
-    print(prettyBalances)
+    print(prettyBalances.to_string())
     
     valueByAsset = pd.DataFrame(accountBalances.groupby("Asset").sum())
     valueByAsset.drop(["Price"], axis=1, inplace=True)
     valueByAsset["Fiat value"] = valueByAsset.Value.map('${:,.2f}'.format)
     valueByAsset["Total balance"] = valueByAsset.Balance.map('{:,.2f}'.format)
-    print(valueByAsset.sort_values(by="Value", ascending=False)[["Fiat value", "Total balance"]])
+    print(valueByAsset.sort_values(by="Value", ascending=False)[["Fiat value", "Total balance"]].to_string())
 
     valueByAccount = pd.DataFrame(accountBalances.groupby("Address").sum())
     valueByAccount.drop(["Price"], axis=1, inplace=True)
     valueByAccount["Fiat value"] = valueByAccount.Value.map('${:,.2f}'.format)
-    print(valueByAccount.sort_values(by="Value", ascending=False)[["Fiat value"]])
+    print(valueByAccount.sort_values(by="Value", ascending=False)[["Fiat value"]].to_string())
 
     print(f"Total portfolio value: {accountBalances.Balance.mul(accountBalances.Price).sum()}")
     
