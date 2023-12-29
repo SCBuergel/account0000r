@@ -104,6 +104,7 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
     load0000rs = []
     for c in range(len(chains)):
         for t in range(len(chains[c]["tokens"])):
+            print(f"loading token: {chains[c]['tokens'][t]}")
             newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r)
 
             load0000rs.append(newLoad0000r)
