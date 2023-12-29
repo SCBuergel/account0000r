@@ -9,6 +9,80 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from load0000rs.singleErc20AtBlock import load0000r
 import random
+import time
+
+def _exponential_backoff(func, *args, max_wait=20, max_attempts=10, **kwargs):
+    """calls any function with any parameters with an expoential backoff on any exception
+    You can use this function for e.g. _exponential_backoff(web3.eth.get_block, 1234)
+    """
+
+    attempt = 0
+    wait_time = 1  # Initial wait time of 1 second
+
+    while True:
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Function call failed: {e}. Retrying in {wait_time} seconds.")
+            time.sleep(wait_time)
+            attempt += 1
+            wait_time = min(2 ** attempt, max_wait)  # Exponential backoff with a cap
+
+            if wait_time >= max_wait:
+                wait_time = max_wait
+
+            if attempt > max_attempts:
+                print(f"attempted to call more than {max_attempts} times. Aborting.")
+                raise
+
+def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block, web3):
+    last_block_before_timestamp = None
+
+    while start_block <= end_block:
+        mid_block = (start_block + end_block) // 2
+
+        mid_block_data = _exponential_backoff(web3.eth.get_block, mid_block)
+        mid_timestamp = mid_block_data["timestamp"]
+        print(f"mid timestamp of block {mid_block} is {mid_timestamp}")
+
+        if mid_timestamp is None:
+            print("Error fetching block timestamp.")
+            return None
+
+        if mid_timestamp <= target_timestamp:
+            last_block_before_timestamp = mid_block
+            start_block = mid_block + 1
+        else:
+            end_block = mid_block - 1
+
+    print(f"last block before timestamp: {last_block_before_timestamp}")
+    return last_block_before_timestamp
+
+
+def getBlockNoFromTimestamp(chains, timestamp):
+    """Returns a chain entry containing the block number that is at (or the last block before) timestamp
+
+    Parameters
+    ----------
+    chain : object
+        a chain object
+    timestamp: int
+        timestamp to look for in blocks
+    """
+    for c in range(len(chains)):
+        print(f"getting block number from timestamp {timestamp} on {chains[c]['api']}")
+        web3 = Web3(Web3.HTTPProvider(chains[c]["api"]))
+        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        latest_block = web3.eth.block_number
+        preceding_blockNo = _find_preceding_block_by_timestamp(timestamp, 1, latest_block, web3)
+        if "metadata" not in chains[c]:
+            chains[c]["metadata"] = {}
+            chains[c]["metadata"]["blockNumberByTimestamp"] = {
+                "timestamp": timestamp,
+                "blockNumber": preceding_blockNo
+            }
+    return chains
+
 
 def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
     """Generates singleErc20Load0000r instances from list of chains and adds the ERC20 decimals to all ERC20 load0000rs that are passed and makes sure that the token symbol matches what is stored on chain

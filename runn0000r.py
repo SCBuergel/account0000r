@@ -15,8 +15,11 @@ print("loading secrets and chains...")
 #accounts = [*accounts0, *accounts1]
 
 #accounts = json.load(open("data/accounts-2023-07-09--09-40-37.json"))
-accounts = json.load(open("data/accounts-2023-07-09--21-37-06.json"))
-chains = json.load(open("data/chains-EOY2021-decimals-noKraken.json"))
+accounts = json.load(open("data/accounts-blank.json"))
+chains = json.load(open("data/chains.json"))
+eoy2022 = 1672527600
+chains = account0000r.getBlockNoFromTimestamp(chains, eoy2022)
+account0000r.writeJson(chains, fileName="data/chains-eoy2022.json")
 
 #print("loading account metadata...")
 #accounts = account0000r.loadAccountMetadata([nonce.load0000r()], accounts, chains)
@@ -24,7 +27,7 @@ chains = json.load(open("data/chains-EOY2021-decimals-noKraken.json"))
 #print("writing json...")
 #account0000r.writeJson(accounts)
 
-print("printing results...")
+#print("printing results...")
 #analyz0000r.listAccountsNonZero(accounts, load0000r="ETH balance at block", dust=0.01)
 #analyz0000r.tabulateAllAccounts(accounts)
 #analyz0000r.tabulateNonZeroNonce(accounts)
@@ -45,9 +48,9 @@ print("printing results...")
 #accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
 #account0000r.writeJson(accounts)
 
-accounts2 = json.load(open("data/accounts-kraken-EOY2021.json"))
-accountsAll = [*accounts, *accounts2]
-accountBalances = analyz0000r.portfolioValue(accountsAll, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
+#accounts2 = json.load(open("data/accounts-kraken-EOY2021.json"))
+#accountsAll = [*accounts, *accounts2]
+#accountBalances = analyz0000r.portfolioValue(accountsAll, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
 #csvOutputFile = "data/new-accountingEnd2021.csv"
 #accountBalances.to_csv(csvOutputFile)
 #errors.to_csv("data/errors.csv")

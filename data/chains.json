@@ -169,12 +169,12 @@
   },
   {
     "name": "Gnosis Chain",
-    "api": "https://gnosischain-rpc.gateway.pokt.network",
+    "api": "https://gnosis.oat.farm",
     "id": 100
   },
   {
     "name": "BNB Smart Chain",
-    "api": "https://bsc-dataseed1.binance.org",
+    "api": "https://bsc-dataseed1.bnbchain.org",
     "id": 56
   },
   {
