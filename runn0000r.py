@@ -45,8 +45,9 @@ print("printing results...")
 #accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
 #account0000r.writeJson(accounts)
 
-#accounts = json.load(open("data/accounts-2023-07-09--09-40-37.json"))
-accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
+accounts2 = json.load(open("data/accounts-kraken-EOY2021.json"))
+accountsAll = [*accounts, *accounts2]
+accountBalances = analyz0000r.portfolioValue(accountsAll, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
 #csvOutputFile = "data/new-accountingEnd2021.csv"
 #accountBalances.to_csv(csvOutputFile)
 #errors.to_csv("data/errors.csv")

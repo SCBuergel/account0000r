@@ -222,6 +222,7 @@ def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPri
     print(f"Missing asset prices for: {np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())}")
     
     if storeCsv:
+        print("storing CSV files...")
         accountBalances.sort_values(by="Value", ascending=False).to_csv("data/account_balances.csv", index=False)
         accountBalances.groupby("Asset").agg({"Balance": "sum", "Value": "sum", "Price": "first"}).sort_values(by="Value", ascending=False)[["Balance", "Price", "Value"]].to_csv("data/asset_values.csv")
         accountBalances.groupby("Address").sum().sort_values(by="Value", ascending=False)[["Value"]].to_csv("data/address_values.csv")
