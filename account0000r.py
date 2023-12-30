@@ -10,30 +10,8 @@ from web3.middleware import geth_poa_middleware
 from load0000rs.singleErc20AtBlock import load0000r
 import random
 import time
+from utils import _exponential_backoff
 
-def _exponential_backoff(func, *args, max_wait=20, max_attempts=10, **kwargs):
-    """calls any function with any parameters with an expoential backoff on any exception
-    You can use this function for e.g. _exponential_backoff(web3.eth.get_block, 1234)
-    """
-
-    attempt = 0
-    wait_time = 1  # Initial wait time of 1 second
-
-    while True:
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            print(f"Function call failed: {e}. Retrying in {wait_time} seconds.")
-            time.sleep(wait_time)
-            attempt += 1
-            wait_time = min(2 ** attempt, max_wait)  # Exponential backoff with a cap
-
-            if wait_time >= max_wait:
-                wait_time = max_wait
-
-            if attempt > max_attempts:
-                print(f"attempted to call more than {max_attempts} times. Aborting.")
-                raise
 
 def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block, web3):
     last_block_before_timestamp = None
@@ -41,7 +19,7 @@ def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block,
     while start_block <= end_block:
         mid_block = (start_block + end_block) // 2
 
-        mid_block_data = _exponential_backoff(web3.eth.get_block, mid_block)
+        mid_block_data = utils._exponential_backoff(web3.eth.get_block, mid_block)
         mid_timestamp = mid_block_data["timestamp"]
         print(f"mid timestamp of block {mid_block} is {mid_timestamp}")
 
@@ -103,15 +81,16 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
     """
     load0000rs = []
     for c in range(len(chains)):
-        for t in range(len(chains[c]["tokens"])):
-            print(f"loading token: {chains[c]['tokens'][t]}")
-            newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r)
+        if "tokens" in chains[c]:
+            for t in range(len(chains[c]["tokens"])):
+                print(f"loading token: {chains[c]['tokens'][t]}")
+                newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r)
 
-            load0000rs.append(newLoad0000r)
+                load0000rs.append(newLoad0000r)
 
-            # update the token which now (latest) has decimals (and symbol checked)
-            if (loadChainData):
-                chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
+                # update the token which now (latest) has decimals (and symbol checked)
+                if (loadChainData):
+                    chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
     random.shuffle(load0000rs) 
     return load0000rs, chains
 
@@ -185,6 +164,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
 
     errors = []
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
+    start_time = time.time()
     for a in range(len(accounts)):
         address = accounts[a]["address"]
         for l in range(len(load0000rs)):
@@ -212,7 +192,9 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                         continue
 
                     if (newEntry is not None):
-                        print(f"progress: {progress:.2f}% ({address} on {c['name']}, running {load0000r.name()}...)")
+                        time_now = time.time()
+                        if progress > 0:
+                            print(f"progress: {progress:.3f}% in {time_now - start_time:.0f}s ({address} on {c['name']}, running {load0000r.name()}, estimated time remaining: {(time_now - start_time) / progress * 100:.0f}s...)")
                         if (load0000r._metaLoad0000r != {}):
                             metaName = load0000r._metaLoad0000r.name()
                             if (metaName not in accounts[a]["chains"][c["name"]]):

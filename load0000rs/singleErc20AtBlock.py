@@ -1,6 +1,7 @@
 import json
 from web3 import Web3
 from load0000rs.base import baseLoad0000r
+from utils import _exponential_backoff
 
 class load0000r(baseLoad0000r):
     def __init__(self, skipAnalysisIfEntryExists, chain, token, metaLoad0000r):
@@ -49,10 +50,10 @@ class load0000r(baseLoad0000r):
         """
             
         # check if token has been deployed by target block already, otherwise the erc20 calls would fail
-        code = web3.eth.get_code(self.__token["address"], block_identifier=targetBlockNumber)
+        code = _exponential_backoff(web3.eth.get_code, self.__token["address"], block_identifier=targetBlockNumber)
         if (len(code) > 2):
             erc20 = web3.eth.contract(address=self.__token["address"], abi=erc20BalanceABI)
-            balance = erc20.functions.balanceOf(account).call(block_identifier=targetBlockNumber) / 10**self.__token["decimals"]
+            balance = _exponential_backoff(erc20.functions.balanceOf(account).call, block_identifier=targetBlockNumber) / 10**self.__token["decimals"]
         else:
             print(f"token {self.__token['symbol']} not deployed at block {targetBlockNumber} on chain {chain['name']}")
             balance = 0
@@ -85,12 +86,12 @@ class load0000r(baseLoad0000r):
 
         # load decimal and symbol only if it does not yet exist in the metadata
         if ("decimals" not in self.__token):
-            self.__token["decimals"] = int(erc20.functions.decimals().call())
+            self.__token["decimals"] = int(_exponential_backoff(erc20.functions.decimals().call))
         
         # since MKR and SAI are not ERC20 compatible we have to exclude them from this check 
         if ("symbol" not in self.__token and self.__token["symbol"] != "MKR" and self.__token["symbol"] != "SAI"):
-            symbol = erc20.functions.symbol().call()
-            name = erc20.functions.name().call()
+            symbol = _exponential_backoff(erc20.functions.symbol().call)
+            name = _exponential_backoff(erc20.functions.name().call)
             if (symbol != self.__token["symbol"]):
                 print(f"Token symbol of load0000r {self.name()} does not match, expected {self.__token['symbol']} but got {symbol} from chain")
 

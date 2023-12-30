@@ -169,12 +169,12 @@
   },
   {
     "name": "Gnosis Chain",
-    "api": "https://gnosis.oat.farm",
+    "api": "https://rpc.ankr.com/gnosis",
     "id": 100
   },
   {
     "name": "BNB Smart Chain",
-    "api": "https://bsc-dataseed1.bnbchain.org",
+    "api": "https://binance.llamarpc.com",
     "id": 56
   },
   {
@@ -184,7 +184,7 @@
   },
   { 
     "name": "Arbitrum",
-    "api": "https://1rpc.io/arb",
+    "api": "https://rpc.ankr.com/arbitrum",
     "id": 42161
   },
   { 
