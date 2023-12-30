@@ -179,7 +179,7 @@
   },
   {
     "name": "Polygon",
-    "api": "https://polygon.llamarpc.com",
+    "api": "https://rpc.ankr.com/polygon",
     "id": 137
   },
   { 

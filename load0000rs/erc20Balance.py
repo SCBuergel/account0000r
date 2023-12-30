@@ -1,6 +1,7 @@
 import json
 from web3 import Web3
 from load0000rs.base import baseLoad0000r
+from utils import _exponential_backoff
 
 class load0000r(baseLoad0000r):
     def __init__(self, skipAnalysisIfEntryExists):
@@ -31,8 +32,8 @@ class load0000r(baseLoad0000r):
             if (len(code) > 2):
                 erc20 = web3.eth.contract(address=tokenAddress, abi=erc20BalanceABI)
                 # name = erc20.functions.name().call()
-                decimals = int(erc20.functions.decimals().call())
-                balance = erc20.functions.balanceOf(account).call(block_identifier=targetBlockNumber) / 10**decimals
+                decimals = int(_exponential_backoff(erc20.functions.decimals().call))
+                balance = _exponential_backoff(erc20.functions.balanceOf(account).call, block_identifier=targetBlockNumber) / 10**decimals
             else:
                 balance = 0
             tokenBalances.append({
