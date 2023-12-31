@@ -59,6 +59,29 @@ mainnet_rpc_providers = [
     "https://rpc.mevblocker.io/noreverts",
     "https://rpc.mevblocker.io/fullprivacy"
 ]
+
+arbitrum_rpc_providers = [
+    "https://arbitrum.llamarpc.com",
+    "https://arb1.arbitrum.io/rpc",
+    "https://rpc.ankr.com/arbitrum",
+    "https://1rpc.io/arb",
+    "https://arb-pokt.nodies.app",
+    "https://arbitrum.getblock.io/api_key/mainnet",
+    "https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}",
+    "https://arb-mainnet.g.alchemy.com/v2/demo",
+    "https://arbitrum.blockpi.network/v1/rpc/public",
+    "https://arbitrum-one.public.blastapi.io",
+    "https://endpoints.omniatech.io/v1/arbitrum/one/public",
+    "https://arb-mainnet-public.unifra.io",
+    "https://arbitrum.api.onfinality.io/public",
+    "https://rpc.arb1.arbitrum.gateway.fm",
+    "https://arbitrum-one.publicnode.com",
+    "wss://arbitrum-one.publicnode.com",
+    "https://arbitrum.meowrpc.com",
+    "https://api.zan.top/node/v1/arb/one/public",
+    "https://arbitrum.drpc.org"
+]
+
 #"""
 
 # Function to check if an RPC provider is an archive node
@@ -98,20 +121,22 @@ def test_rpc(rpc_url, block="0xf4240", num_requests=20, address="0x0000000000000
 
 # Check each RPC provider and print if it's an archive node
 data = []
-for rpc in mainnet_rpc_providers:
-    latencies = test_rpc(rpc, block="latest", num_requests=100)
-    count = len(latencies)
-    median = f"{statistics.median(latencies) if count > 0 else 0.0:.3f}"
-    stdev = f"{statistics.stdev(latencies) if count > 0 else 0.0:.3f}"
+attempts_per_provider = 20
+for rpc in arbitrum_rpc_providers:
+    latencies = test_rpc(rpc, num_requests=attempts_per_provider)
+    count = len(latencies) / attempts_per_provider * 100
+    median = statistics.median(latencies) if len(latencies) > 0 else 0.0
+    stdev = statistics.stdev(latencies) if len(latencies) > 1 else 0.0
     data.append([rpc, count, median, stdev])
     if len(latencies) > 0:
-        print(f"{rpc} is an archive node. Responses: {count}. Median latency: {median} +/- {stdev}s")
+        print(f"{rpc} is an archive node. Responses: {float(count):.2f}%. Median latency: {median:.3f} +/- {stdev:.3f}s")
     else:
         print(f"{rpc} is not an archive node or is unreachable.")
 
 
 data = sorted(data, key=lambda x: (-x[1], x[2], x[0]))
-data.insert(0, ["RPC provider", "success rate [%]", "avg latency [s]", "stdev [s]"])
+data = [row[:1] + ["{:.2f}".format(row[1])] + ["{:.3f}".format(row[2])] + ["{:.3f}".format(row[3])] for row in data]
+data.insert(0, ["RPC provider", "success rate [%]", "median latency [s]", "stdev [s]"])
 col_widths = [max(len(str(cell)) for cell in column) for column in zip(*data)]
 
 # Print the table
