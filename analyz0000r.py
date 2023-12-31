@@ -131,6 +131,17 @@ def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
     c = pd.DataFrame(chains)
     coinLoad0000r = "ETH balance at block" if atBlock else "ETH balance"
     tokenLoad0000r = "ERC20 balances"
+    
+    # check if nativeBalance exists for all accounts
+    for a in range(ac.shape[0]):
+        for chainItems in ac.iloc[a]["chains"].items():
+            
+            if coinLoad0000r not in chainItems[1]:
+                raise KeyError(f"missing '{coinLoad0000r}' in '{chainItems[0]}' of '{ac.iloc[a]['address']}'")
+
+            if "nativeBalance" not in chainItems[1][coinLoad0000r]:
+                raise ValueError(f"missing 'nativeBalance' in {chainItems[1]}")
+    
     coinBalances = pd.DataFrame([
     [ac.iloc[a]['address'], chainItems[0], chainItems[1][coinLoad0000r]["nativeBalance"], c[c.name == chainItems[0]].nativeAsset.to_string(index=False).strip()]
     for a in range(ac.shape[0])
@@ -188,7 +199,7 @@ def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPri
         stores output CSVs for the 3 data sets that are being printed to the screen if True (default)
     """
 
-    prices = pd.read_csv(assetPricesCsv, skipinitialspace=True)
+    prices = pd.DataFrame()#pd.read_csv(assetPricesCsv, skipinitialspace=True)
     accountBalances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
     chainDf = pd.DataFrame(chains)
     accountBalances = accountBalances.join(prices.set_index("Asset"), on="Asset")

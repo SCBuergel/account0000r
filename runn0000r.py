@@ -24,7 +24,7 @@ account0000r.writeJson(chains, fileName="data/chains-eoy2022.json")
 
 
 accounts = json.load(open("data/accounts-blank.json"))
-chains = json.load(open("data/chains-eoy2022.json"))
+chains = json.load(open("data/chains-eoy2022-tokens.json"))
 
 #print("loading account metadata...")
 #accounts = account0000r.loadAccountMetadata([nonce.load0000r()], accounts, chains)
@@ -46,16 +46,19 @@ chains = json.load(open("data/chains-eoy2022.json"))
 #dataFile = "data/accounts-2023-02-10--09-38-50--hard-EOY2021.json"
 #accounts = json.load(open(dataFile))
 #chains = json.load(open("data/chains-EOY2021-decimals.json"))
+
+"""
 metaErc20 = metaLoad0000rErc20.load0000r()
 erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=True)
 account0000r.writeJson(chains, "data/chains-eoy2022-tokens.json")
 accounts, errors = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r(), *erc20Load0000rs], accounts, chains)
 #accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
 account0000r.writeJson(accounts)
+"""
 
-#accounts2 = json.load(open("data/accounts-kraken-EOY2021.json"))
+accounts = json.load(open("data/accounts-2023-12-29--20-03-27.json"))
 #accountsAll = [*accounts, *accounts2]
-#accountBalances = analyz0000r.portfolioValue(accountsAll, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
+accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
 #csvOutputFile = "data/new-accountingEnd2021.csv"
 #accountBalances.to_csv(csvOutputFile)
 #errors.to_csv("data/errors.csv")
