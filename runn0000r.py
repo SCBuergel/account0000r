@@ -1,6 +1,6 @@
 import json
 import account0000r
-from load0000rs import ethBalance, ethBalanceAtBlock, nonce, airdropOpApi, airdropHopApi, airdropHopJson, erc20BalanceAtBlock, erc20Balance, metaLoad0000rErc20
+from load0000rs import ethBalance, nonce, airdropOpApi, airdropHopApi, airdropHopJson, erc20BalanceAtBlock, erc20Balance, metaLoad0000rErc20
 import analyz0000r
 import chainLoad0000rs
 
@@ -14,17 +14,8 @@ print("loading secrets and chains...")
 #accounts1 = json.load(open("data/accounts-2023-07-08--15-10-33.json"))
 #accounts = [*accounts0, *accounts1]
 
-"""
-accounts = json.load(open("data/accounts-blank.json"))
-chains = json.load(open("data/chains.json"))
-eoy2022 = 1672527600
-chains = account0000r.getBlockNoFromTimestamp(chains, eoy2022)
-account0000r.writeJson(chains, fileName="data/chains-eoy2022.json")
-"""
-
-
-accounts = json.load(open("data/accounts-blank.json"))
-chains = json.load(open("data/chains-eoy2022-tokens.json"))
+#accounts = json.load(open("data/accounts-blank-sample.json"))
+#chains = json.load(open("data/chains-eoy2022-tokens.json"))
 
 #print("loading account metadata...")
 #accounts = account0000r.loadAccountMetadata([nonce.load0000r()], accounts, chains)
@@ -42,29 +33,37 @@ chains = json.load(open("data/chains-eoy2022-tokens.json"))
 
 ### 2. OPEN ACCOUNTS, FIND EOY BLOCKS, LOAD EOY BALANCE, STORE, DISPLAY
 
-#dataFile = "data/accounts-2022-07-06--21-50-57--hard.json"
-#dataFile = "data/accounts-2023-02-10--09-38-50--hard-EOY2021.json"
-#accounts = json.load(open(dataFile))
-#chains = json.load(open("data/chains-EOY2021-decimals.json"))
+atBlock=True
+eoy2022 = 1672527600
+accounts = json.load(open("data/accounts-blank-sample.json"))
+chains = json.load(open("data/chains-sample.json"))
+chains = account0000r.getBlockNoFromTimestamp(chains, eoy2022)
 
-"""
+# write JSON with EOY block numbers so that the above block number reading
+# does not have to be run every time
+account0000r.writeJson(chains, fileName="data/chains-sample-eoy2022.json")
+
 metaErc20 = metaLoad0000rErc20.load0000r()
-erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=True)
-account0000r.writeJson(chains, "data/chains-eoy2022-tokens.json")
-accounts, errors = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r(), *erc20Load0000rs], accounts, chains)
+erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=True, atBlock=atBlock)
+
+# write JSON with token decimals so that the above decimal reading
+# does not have to be run every time
+account0000r.writeJson(chains, "data/chains-sample-eoy2022-tokens.json")
+
+accounts, errors = account0000r.loadAccountMetadata([ethBalance.load0000r(atBlock=atBlock), *erc20Load0000rs], accounts, chains)
 #accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
 account0000r.writeJson(accounts)
+
 """
 
-accounts = json.load(open("data/accounts-2023-12-29--20-03-27.json"))
-#accountsAll = [*accounts, *accounts2]
-accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2021.csv")
+
+
 #csvOutputFile = "data/new-accountingEnd2021.csv"
 #accountBalances.to_csv(csvOutputFile)
 #errors.to_csv("data/errors.csv")
 
 
-"""
+
 TODO
 3. handle load0000rs with remote API calls in queue
 3.1. [DONE] Add flag property to base load0000r and if the flag is set, execution is delayed and the load0000r call is instead pushed into a shuffled queue
@@ -82,19 +81,13 @@ TODO
 
 ### 3. OPEN ACCOUNTS, DISPLAY
 
-#chains = json.load(open("data/chains-EOY2021.json"))
-#dataFile0 = "data/accounts-blank.json"
-#accounts0 = json.load(open(dataFile0))
-#accounts1 = json.load(open(dataFile1))
-#accounts = [*accounts0, *accounts1]
+accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2022.csv", atBlock=atBlock)
+
 #df = analyz0000r.listAllNonDustBalances(accounts, chains, atBlock=True)
 
-#accountBalances = analyz0000r.portfolioValue(accounts, chains, atBlock=True)
-#print(accountBalances)
 #csvOutputFile = "data/accountingEnd2021.csv"
-#df.to_csv(csvOutputFile)
+#accountBalances.to_csv(csvOutputFile)
 #analyz0000r.tableAccountsNonZeroBalance(accounts, load0000r="ETH balance at block")
 #analyz0000r.tabulateAllAccounts(accounts)
 #analyz0000r.tabulateNonZeroNonce(accounts)
 #analyz0000r.listAccountsNonZero(accounts)
-

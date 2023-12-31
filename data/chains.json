@@ -1,7 +1,7 @@
 [
   {
     "name": "Ethereum Main Net",
-    "api": "https://rpc.builder0x69.io",
+    "api": "https://eth-pokt.nodies.app",
     "id": 1,
     "tokens":
     [

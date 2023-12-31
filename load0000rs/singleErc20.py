@@ -4,7 +4,7 @@ from load0000rs.base import baseLoad0000r
 from utils import _exponential_backoff
 
 class load0000r(baseLoad0000r):
-    def __init__(self, skipAnalysisIfEntryExists, chain, token, metaLoad0000r):
+    def __init__(self, skipAnalysisIfEntryExists, chain, token, metaLoad0000r, atBlock=False):
         """
         Parameters
         ----------
@@ -20,8 +20,10 @@ class load0000r(baseLoad0000r):
                     symbol of the token, e.g. "DAI"
                 ["address"] : string
                     address of the token on which chain to run it
-                ["decimals"] : int
+                ["decimals"] : 
                     decimals of the token
+        atBlock : bool (optional, default: True)
+            if True, it will return the load0000rs which read data at a specific block, otherwise the latest block data will be loaded
 
         metaLoad0000r : load0000r
             the metaLoad0000r that contains this child load0000r
@@ -31,6 +33,7 @@ class load0000r(baseLoad0000r):
         self.__chain = chain
         self.__token = token
         self.__name = "Single ERC20 balance " + self.__token["symbol"] + " " + self.__chain["name"]
+        self.__atBlock = atBlock
         self._metaLoad0000r = metaLoad0000r
 
     def name(self):
@@ -42,7 +45,11 @@ class load0000r(baseLoad0000r):
     def analyze(self, account, chain):
         if (chain["name"] != self.__chain["name"]):
             return
-        targetBlockNumber = chain["metadata"]["blockNumberByTimestamp"]["blockNumber"]
+        if self.__atBlock:
+            targetBlockNumber = chain["metadata"]["blockNumberByTimestamp"]["blockNumber"]
+        else:
+            targetBlockNumber = "latest"
+
         web3 = Web3(Web3.HTTPProvider(chain["api"]))
         erc20BalanceABI = """[
         {"inputs":[{"internalType":"address","name":"tokenHolder","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}

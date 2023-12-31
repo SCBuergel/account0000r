@@ -82,6 +82,36 @@ arbitrum_rpc_providers = [
     "https://arbitrum.drpc.org"
 ]
 
+polygon_rpc_providers = [
+    "https://polygon.llamarpc.com",
+    "https://rpc-mainnet.maticvigil.com",
+    "https://endpoints.omniatech.io/v1/matic/mainnet/public",
+    "https://polygon-rpc.com",
+    "https://rpc-mainnet.matic.network",
+    "https://rpc-mainnet.matic.quiknode.pro",
+    "https://matic-mainnet-full-rpc.bwarelabs.com",
+    "https://matic-mainnet-archive-rpc.bwarelabs.com",
+    "https://polygon-pokt.nodies.app",
+    "https://rpc.ankr.com/polygon",
+    "https://polygon-mainnet.public.blastapi.io",
+    "https://polygonapi.terminet.io/rpc",
+    "https://1rpc.io/matic",
+    "https://polygon-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S6g2H7WdwFigZSmPWVZRxrskEQwIf",
+    "https://polygon-bor.publicnode.com",
+    "wss://polygon-bor.publicnode.com",
+    "https://polygon-mainnet-public.unifra.io",
+    "https://polygon-mainnet.g.alchemy.com/v2/demo",
+    "https://polygon.blockpi.network/v1/rpc/public",
+    "https://polygon.api.onfinality.io/public",
+    "https://polygon.rpc.blxrbdn.com",
+    "https://polygon.drpc.org",
+    "https://polygon.gateway.tenderly.co",
+    "https://gateway.tenderly.co/public/polygon",
+    "https://api.zan.top/node/v1/polygon/mainnet/public",
+    "https://polygon.meowrpc.com",
+    "https://getblock.io/nodes/matic",
+    "wss://polygon.gateway.tenderly.co"
+]
 #"""
 
 # Function to check if an RPC provider is an archive node
@@ -119,10 +149,10 @@ def test_rpc(rpc_url, block="0xf4240", num_requests=20, address="0x0000000000000
     return latencies
 
 
-# Check each RPC provider and print if it's an archive node
+# Check each RPC provider and prin0t if it's an archive node
 data = []
 attempts_per_provider = 20
-for rpc in arbitrum_rpc_providers:
+for rpc in mainnet_rpc_providers:
     latencies = test_rpc(rpc, num_requests=attempts_per_provider)
     count = len(latencies) / attempts_per_provider * 100
     median = statistics.median(latencies) if len(latencies) > 0 else 0.0

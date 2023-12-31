@@ -182,7 +182,7 @@ def tabulateAllAccounts(accounts):
 
 
 
-def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPrices.csv", storeCsv=True):
+def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPrices.csv", storeCsv=True):
     """Prints portfolio value overview with all accounts, per asset, per account and total portfolio sum and a list of assets who are not priced in the the asset prices CSV file
 
     Parameters
@@ -192,14 +192,14 @@ def portfolioValue(accounts, chains, atBlock=True, assetPricesCsv="data/assetPri
     chains : list[chain]
       	a list of chains loaded by account0000r
     atBlock : bool, optional
-        reads account information with the "at block" load0000rs (for native coins and erc20 tokens), default True
+        reads account information with the "at block" load0000rs (for native coins and erc20 tokens), default False
     assetPriceCsv : string, optional
 	    CSV file name containing asset name and price (in USD)
     storeCsv : bool, optional
         stores output CSVs for the 3 data sets that are being printed to the screen if True (default)
     """
 
-    prices = pd.DataFrame()#pd.read_csv(assetPricesCsv, skipinitialspace=True)
+    prices = pd.DataFrame(columns=["Asset", "Price"])#pd.read_csv(assetPricesCsv, skipinitialspace=True)
     accountBalances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
     chainDf = pd.DataFrame(chains)
     accountBalances = accountBalances.join(prices.set_index("Asset"), on="Asset")

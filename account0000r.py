@@ -7,11 +7,10 @@ from hdwallet.utils import generate_mnemonic
 #pip install hdwallet
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from load0000rs.singleErc20AtBlock import load0000r
 import random
 import time
 from utils import _exponential_backoff
-
+from load0000rs.singleErc20 import load0000r
 
 def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block, web3):
     last_block_before_timestamp = None
@@ -19,7 +18,7 @@ def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block,
     while start_block <= end_block:
         mid_block = (start_block + end_block) // 2
 
-        mid_block_data = utils._exponential_backoff(web3.eth.get_block, mid_block)
+        mid_block_data = _exponential_backoff(web3.eth.get_block, mid_block)
         mid_timestamp = mid_block_data["timestamp"]
         print(f"mid timestamp of block {mid_block} is {mid_timestamp}")
 
@@ -62,7 +61,7 @@ def getBlockNoFromTimestamp(chains, timestamp):
     return chains
 
 
-def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
+def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=False):
     """Generates singleErc20Load0000r instances from list of chains and adds the ERC20 decimals to all ERC20 load0000rs that are passed and makes sure that the token symbol matches what is stored on chain
 
     Parameters
@@ -73,6 +72,8 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
         metaload0000r which all the returned load0000rs reference
     loadChainData : bool
         can be set to False to speed up the process if the chain dictionary already contains the tokens and token metadata (decimals, name, symbol checked) 
+    atBlock : bool
+        if True, it will return the load0000rs which read data at a specific block, otherwise the latest block data will be loaded
 
     Returns
     -------
@@ -80,11 +81,12 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True):
         the list of load0000rs that now contains the decimals for each token on each chain
     """
     load0000rs = []
+
     for c in range(len(chains)):
         if "tokens" in chains[c]:
             for t in range(len(chains[c]["tokens"])):
                 print(f"loading token: {chains[c]['tokens'][t]}")
-                newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r)
+                newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r, atBlock)
 
                 load0000rs.append(newLoad0000r)
 
