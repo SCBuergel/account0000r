@@ -1,0 +1,14 @@
+[
+  {
+    "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "index": 0,
+    "use": "aping",
+    "mnemonic": "Vitalik"
+  },
+  {
+    "address": "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6",
+    "index": 1,
+    "use": "savings",
+    "mnemonic": "Vitalik"
+  }
+]
