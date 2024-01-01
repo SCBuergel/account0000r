@@ -218,6 +218,14 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
     accountBalances = pd.concat([accountBalances, accountValues], axis=1)
     accountBalances.rename(columns = {list(accountBalances)[-1]: 'Value'}, inplace = True)
 
+    accountBalances['Value_sum'] = accountBalances.groupby('Address')['Value'].transform('sum')
+    accountBalances.sort_values(by=['Value_sum', 'Address', 'Value', 'Chain', 'Asset'],
+               ascending=[False, True, True, True, True],
+               inplace=True,
+               key=lambda x: x.str.lower() if x.name in ['Address', 'Chain', 'Asset'] else x)
+    accountBalances.drop(columns=['Value_sum'], inplace=True)
+
+
     prettyBalances = accountBalances.sort_values(by="Value", ascending=False)
     prettyBalances.Balance = prettyBalances.Balance.map('{:,}'.format)
     prettyBalances.Value = prettyBalances.Value.map('${:,.2f}'.format)

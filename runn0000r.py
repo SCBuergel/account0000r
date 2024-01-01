@@ -80,7 +80,7 @@ TODO
 
 
 ### 3. OPEN ACCOUNTS, DISPLAY
-accounts = json.load(open("data/accounts-2023-12-31--15-07-53--LATEST.json"))
+accounts = json.load(open("data/accounts-2023-12-31--20-01-37--LATEST.json"))
 accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2022.csv", atBlock=atBlock)
 
 #df = analyz0000r.listAllNonDustBalances(accounts, chains, atBlock=True)
