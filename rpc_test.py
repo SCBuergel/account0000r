@@ -112,6 +112,27 @@ polygon_rpc_providers = [
     "https://getblock.io/nodes/matic",
     "wss://polygon.gateway.tenderly.co"
 ]
+
+gnosis_rpc_providers = [
+"""
+"https://rpc.gnosischain.com",
+    "https://xdai-archive.blockscout.com",
+    "https://gnosis-pokt.nodies.app",
+"""
+    "https://rpc.gnosis.gateway.fm",
+    "https://gnosis-mainnet.public.blastapi.io",
+    "https://rpc.ankr.com/gnosis",
+    "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
+    "https://gnosis.blockpi.network/v1/rpc/public",
+    "https://gnosis.api.onfinality.io/public",
+    "https://gnosis.drpc.org",
+    "https://endpoints.omniatech.io/v1/gnosis/mainnet/public",
+    "https://gnosis.publicnode.com",
+    "wss://gnosis.publicnode.com",
+    "https://1rpc.io/gnosis",
+    "https://gnosischain-rpc.gateway.pokt.network",
+    "https://gnosis.oat.farm"
+]
 #"""
 
 # Function to check if an RPC provider is an archive node
@@ -152,7 +173,7 @@ def test_rpc(rpc_url, block="0xf4240", num_requests=20, address="0x0000000000000
 # Check each RPC provider and prin0t if it's an archive node
 data = []
 attempts_per_provider = 20
-for rpc in mainnet_rpc_providers:
+for rpc in gnosis_rpc_providers:
     latencies = test_rpc(rpc, num_requests=attempts_per_provider)
     count = len(latencies) / attempts_per_provider * 100
     median = statistics.median(latencies) if len(latencies) > 0 else 0.0

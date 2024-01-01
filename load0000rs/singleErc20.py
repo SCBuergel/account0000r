@@ -32,12 +32,15 @@ class load0000r(baseLoad0000r):
         self._shouldSkipAnalysisIfEntryExists = skipAnalysisIfEntryExists
         self.__chain = chain
         self.__token = token
-        self.__name = "Single ERC20 balance " + self.__token["symbol"] + " " + self.__chain["name"]
+        if atBlock:
+            self.__name = "Single ERC20 balance " + self.__token["symbol"] + " on " + self.__chain["name"] + " atBlock"
+        else:
+            self.__name = "Single ERC20 balance " + self.__token["symbol"] + " on " + self.__chain["name"]
         self.__atBlock = atBlock
         self._metaLoad0000r = metaLoad0000r
 
     def name(self):
-        return self.__token["symbol"] + " balance on " + self.__chain["name"]
+        return self.__name
 
     def version(self):
         return "0.0.1"

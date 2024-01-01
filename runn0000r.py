@@ -32,27 +32,27 @@ print("loading secrets and chains...")
 
 
 ### 2. OPEN ACCOUNTS, FIND EOY BLOCKS, LOAD EOY BALANCE, STORE, DISPLAY
-
-atBlock=True
+atBlock = False
 eoy2022 = 1672527600
-accounts = json.load(open("data/accounts-blank-sample.json"))
-chains = json.load(open("data/chains-sample.json"))
-chains = account0000r.getBlockNoFromTimestamp(chains, eoy2022)
+accounts = json.load(open("data/accounts-blank.json"))
+chains = json.load(open("data/chains.json"))
+#chains = account0000r.getBlockNoFromTimestamp(chains, eoy2022)
 
 # write JSON with EOY block numbers so that the above block number reading
 # does not have to be run every time
-account0000r.writeJson(chains, fileName="data/chains-sample-eoy2022.json")
+#account0000r.writeJson(chains, fileName="data/chains-sample-eoy2022.json")
 
-metaErc20 = metaLoad0000rErc20.load0000r()
-erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=True, atBlock=atBlock)
+
+#metaErc20 = metaLoad0000rErc20.load0000r()
+#erc20Load0000rs, chains = account0000r.generateTokenLoad0000rs(chains, metaErc20, loadChainData=True, atBlock=atBlock)
 
 # write JSON with token decimals so that the above decimal reading
 # does not have to be run every time
-account0000r.writeJson(chains, "data/chains-sample-eoy2022-tokens.json")
+#account0000r.writeJson(chains, "data/chains-eoy2022-tokens.json")
 
-accounts, errors = account0000r.loadAccountMetadata([ethBalance.load0000r(atBlock=atBlock), *erc20Load0000rs], accounts, chains)
+#accounts, errors = account0000r.loadAccountMetadata([ethBalance.load0000r(atBlock=atBlock), *erc20Load0000rs], accounts, chains)
 #accounts = account0000r.loadAccountMetadata([ethBalanceAtBlock.load0000r()], accounts, chains)
-account0000r.writeJson(accounts)
+#account0000r.writeJson(accounts)
 
 """
 
@@ -80,14 +80,15 @@ TODO
 
 
 ### 3. OPEN ACCOUNTS, DISPLAY
-
+accounts = json.load(open("data/accounts-2023-12-31--15-07-53--LATEST.json"))
 accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2022.csv", atBlock=atBlock)
 
 #df = analyz0000r.listAllNonDustBalances(accounts, chains, atBlock=True)
 
 #csvOutputFile = "data/accountingEnd2021.csv"
 #accountBalances.to_csv(csvOutputFile)
-#analyz0000r.tableAccountsNonZeroBalance(accounts, load0000r="ETH balance at block")
+analyz0000r.tableAccountsNonZeroBalance(accounts, load0000r="ETH balance")
+#analyz0000r.printAllAccountUse(accounts)
 #analyz0000r.tabulateAllAccounts(accounts)
 #analyz0000r.tabulateNonZeroNonce(accounts)
 #analyz0000r.listAccountsNonZero(accounts)

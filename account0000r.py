@@ -196,7 +196,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                     if (newEntry is not None):
                         time_now = time.time()
                         if progress > 0:
-                            print(f"progress: {progress:.3f}% in {time_now - start_time:.0f}s ({address} on {c['name']}, running {load0000r.name()}, estimated time remaining: {(time_now - start_time) / progress * 100:.0f}s...)")
+                            print(f"progress: {progress:.3f}% in {time_now - start_time:.0f}s ({address} on {c['name']}, running {load0000r.name()}, estimated time remaining: {(time_now - start_time) / progress * 100 - time_now + start_time:.0f}s...)")
                         if (load0000r._metaLoad0000r != {}):
                             metaName = load0000r._metaLoad0000r.name()
                             if (metaName not in accounts[a]["chains"][c["name"]]):
