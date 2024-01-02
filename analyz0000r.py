@@ -3,7 +3,7 @@ import numpy as np
 from collections import defaultdict
 import pandas as pd
 from itertools import groupby
-
+import os
 
 
 def printBinaryTable(data):
@@ -190,7 +190,7 @@ def printAllAccountUse(accounts):
     for mnemonic, group in groupby(accounts, key=lambda x: x['mnemonic']):
         print(f"{mnemonic}:")
         for item in group:
-            print(f"  {item['index']}: {item['use']}")
+            print(f"  {item['index']} - {item['address']}: {item['use']}")
         print("")
 
 def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPrices.csv", storeCsv=True):
@@ -210,7 +210,10 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
         stores output CSVs for the 3 data sets that are being printed to the screen if True (default)
     """
 
-    prices = pd.DataFrame(columns=["Asset", "Price"])#pd.read_csv(assetPricesCsv, skipinitialspace=True)
+    if os.path.exists(assetPricesCsv):
+        prices = pd.read_csv(assetPricesCsv, skipinitialspace=True)
+    else:
+        prices = pd.DataFrame(columns=["Asset", "Price"])
     accountBalances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
     chainDf = pd.DataFrame(chains)
     accountBalances = accountBalances.join(prices.set_index("Asset"), on="Asset")
@@ -220,13 +223,13 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
 
     accountBalances['Value_sum'] = accountBalances.groupby('Address')['Value'].transform('sum')
     accountBalances.sort_values(by=['Value_sum', 'Address', 'Value', 'Chain', 'Asset'],
-               ascending=[False, True, True, True, True],
+               ascending=[False, True, False, True, True],
                inplace=True,
                key=lambda x: x.str.lower() if x.name in ['Address', 'Chain', 'Asset'] else x)
     accountBalances.drop(columns=['Value_sum'], inplace=True)
 
 
-    prettyBalances = accountBalances.sort_values(by="Value", ascending=False)
+    prettyBalances = accountBalances.copy()
     prettyBalances.Balance = prettyBalances.Balance.map('{:,}'.format)
     prettyBalances.Value = prettyBalances.Value.map('${:,.2f}'.format)
 
@@ -247,9 +250,9 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
     print("Accounts by total balance value:")
     print(valueByAccount.sort_values(by="Value", ascending=False)[["Fiat value"]].to_string())
 
-    print(f"Total portfolio value: {accountBalances.Balance.mul(accountBalances.Price).sum()}")
+    print(f"\nTotal portfolio value: ${accountBalances.Balance.mul(accountBalances.Price).sum():,.2f}")
 
-    print(f"Missing asset prices for: {np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())}")
+    print(f"\nMissing asset prices for: {np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())}")
 
     if storeCsv:
         print("storing CSV files...")

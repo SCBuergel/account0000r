@@ -222,7 +222,7 @@
   {
     "name": "Polygon",
     "api": "https://rpc.ankr.com/polygon",
-    "nativeAsset": "",
+    "nativeAsset": "MATIC",
     "id": 137
   },
   { 
