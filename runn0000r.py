@@ -1,6 +1,6 @@
 import json
 import account0000r
-from load0000rs import ethBalance, nonce, airdropOpApi, airdropHopApi, airdropHopJson, erc20BalanceAtBlock, erc20Balance, metaLoad0000rErc20
+from load0000rs import ethBalance, nonce, airdropOpApi, airdropHopApi, airdropHopJson, erc20BalanceAtBlock, erc20Balance, metaLoad0000rErc20, airdropDymApi
 import analyz0000r
 import chainLoad0000rs
 
@@ -83,9 +83,11 @@ TODO
 ### 3. OPEN ACCOUNTS, DISPLAY
 chains = json.load(open("data/chains-eoy2022-tokens.json"))
 accounts1 = json.load(open("data/accounts-2024-01-02--11-54-03--EOY2023.json"))
-accounts2 = json.load(open("data/accounts-manual-EOY2023.json"))
-accounts = [*accounts1, *accounts2]
-accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrice-EOY2023.csv", atBlock=atBlock)
+#accounts2 = json.load(open("data/accounts-manual-EOY2023.json"))
+accounts = account0000r.loadAccountMetadata([airdropDymApi.load0000r()], accounts1, chains)
+#accounts = [*accounts1, *accounts2]
+#accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrice-EOY2023.csv", atBlock=atBlock)
+
 
 #df = analyz0000r.listAllNonDustBalances(accounts, chains, atBlock=True)
 
@@ -95,4 +97,4 @@ accountBalances = analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="d
 #analyz0000r.printAllAccountUse(accounts)
 #analyz0000r.tabulateAllAccounts(accounts)
 #analyz0000r.tabulateNonZeroNonce(accounts)
-#analyz0000r.listAccountsNonZero(accounts)
+#analyz0000r.listAccountsNonZero(accounts
