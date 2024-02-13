@@ -13,6 +13,7 @@ def _exponential_backoff(func, *args, max_wait=20, max_attempts=10, **kwargs):
             return func(*args, **kwargs)
         except Exception as e:
             print(f"Function call {func}, {str(func)} with {args} failed: {e}. Retrying in {wait_time} seconds.")
+            print(f"RPC provider: {func.__self__.w3.provider}")
             time.sleep(wait_time)
             attempt += 1
             wait_time = min(2 ** attempt, max_wait)  # Exponential backoff with a cap

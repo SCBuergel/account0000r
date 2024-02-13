@@ -119,6 +119,43 @@ polygon_rpc_providers = [
     "https://polygon.api.onfinality.io/public"
 ]
 
+bnb_rpc_providers = [
+    "https://binance.llamarpc.com",
+    "https://endpoints.omniatech.io/v1/bsc/mainnet/public",
+    "https://rpc.polysplit.cloud/v1/chain/56",
+    "https://bsc-mainnet.nodereal.io/v1/64a9df0874fb4a93b9d0a3849de012d3",
+    "https://binance.nodereal.io",
+    "https://bsc.drpc.org",
+    "https://bsc.rpc.blxrbdn.com",
+    "https://bsc.publicnode.com",
+    "https://1rpc.io/bnb",
+    "https://bsc.meowrpc.com",
+    "https://bsc-dataseed4.defibit.io",
+    "https://bsc-dataseed1.defibit.io",
+    "https://bsc-dataseed3.defibit.io",
+    "https://bsc-dataseed.bnbchain.org",
+    "https://bsc-dataseed2.ninicoin.io",
+    "https://bsc-dataseed3.ninicoin.io",
+    "https://bsc-dataseed4.ninicoin.io",
+    "https://bsc-dataseed2.bnbchain.org",
+    "https://bsc-dataseed3.bnbchain.org",
+    "https://bsc-dataseed4.bnbchain.org",
+    "https://api.zan.top/node/v1/bsc/mainnet/public",
+    "https://bsc-dataseed1.bnbchain.org",
+    "https://bsc-dataseed1.ninicoin.io",
+    "https://bsc-pokt.nodies.app",
+    "https://bsc-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S6g2H7WdwFigZSmPWVZRxrskEQwIf",
+    "https://bsc-mainnet.public.blastapi.io",
+    "https://bsc-dataseed2.defibit.io",
+    "https://rpc-bsc.48.club",
+    "https://koge-rpc-bsc.48.club",
+    "https://bsc.blockpi.network/v1/rpc/public",
+    "https://rpc.ankr.com/bsc",
+    "https://bscrpc.com",
+    "https://rpc.tornadoeth.cash/bsc",
+    "https://bnb.api.onfinality.io/public"
+]
+
 # Function to check if an RPC provider is an archive node
 def test_rpc(rpc_url, block="0xf4240", num_requests=20, address="0x0000000000000000000000000000000000000000"):
 
@@ -160,7 +197,8 @@ providers = {
         "gnosis": gnosis_rpc_providers,
         "optimism": optimism_rpc_providers,
         "arbitrum": arbitrum_rpc_providers,
-        "polygon": polygon_rpc_providers
+        "polygon": polygon_rpc_providers,
+        "Binance Chain": bnb_rpc_providers
         }
 
 results = {}

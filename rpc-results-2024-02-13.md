@@ -123,3 +123,43 @@ https://polygon-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S
                                                                       https://rpc-mainnet.matic.quiknode.pro |             0.00 |              0.000 |     0.000
                                                                           https://rpc-mainnet.maticvigil.com |             0.00 |              0.000 |     0.000
 ```
+
+## binance chain
+```
+                                                                                            RPC provider | success rate [%] | median latency [s] | stdev [s]
+                                                                                      https://bscrpc.com |           100.00 |              0.124 |     0.021
+                                                                                https://rpc.ankr.com/bsc |           100.00 |              0.134 |     0.090
+                                     https://bsc-mainnet.nodereal.io/v1/64a9df0874fb4a93b9d0a3849de012d3 |           100.00 |              0.174 |     0.011
+                                                                            https://binance.llamarpc.com |           100.00 |              0.400 |     0.084
+                                                                         https://rpc.tornadoeth.cash/bsc |           100.00 |              0.409 |     0.088
+                                                    https://endpoints.omniatech.io/v1/bsc/mainnet/public |            75.00 |              1.820 |     1.617
+                                                                  https://bsc-mainnet.public.blastapi.io |            70.00 |              0.170 |     0.106
+                                                               https://bsc.blockpi.network/v1/rpc/public |            55.00 |              0.117 |     0.016
+                                                                    https://bnb.api.onfinality.io/public |            15.00 |              0.822 |     0.213
+                                                                                     https://1rpc.io/bnb |             0.00 |              0.000 |     0.000
+                                                          https://api.zan.top/node/v1/bsc/mainnet/public |             0.00 |              0.000 |     0.000
+                                                                             https://binance.nodereal.io |             0.00 |              0.000 |     0.000
+                                                                       https://bsc-dataseed.bnbchain.org |             0.00 |              0.000 |     0.000
+                                                                      https://bsc-dataseed1.bnbchain.org |             0.00 |              0.000 |     0.000
+                                                                        https://bsc-dataseed1.defibit.io |             0.00 |              0.000 |     0.000
+                                                                       https://bsc-dataseed1.ninicoin.io |             0.00 |              0.000 |     0.000
+                                                                      https://bsc-dataseed2.bnbchain.org |             0.00 |              0.000 |     0.000
+                                                                        https://bsc-dataseed2.defibit.io |             0.00 |              0.000 |     0.000
+                                                                       https://bsc-dataseed2.ninicoin.io |             0.00 |              0.000 |     0.000
+                                                                      https://bsc-dataseed3.bnbchain.org |             0.00 |              0.000 |     0.000
+                                                                        https://bsc-dataseed3.defibit.io |             0.00 |              0.000 |     0.000
+                                                                       https://bsc-dataseed3.ninicoin.io |             0.00 |              0.000 |     0.000
+                                                                      https://bsc-dataseed4.bnbchain.org |             0.00 |              0.000 |     0.000
+                                                                        https://bsc-dataseed4.defibit.io |             0.00 |              0.000 |     0.000
+                                                                       https://bsc-dataseed4.ninicoin.io |             0.00 |              0.000 |     0.000
+https://bsc-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S6g2H7WdwFigZSmPWVZRxrskEQwIf |             0.00 |              0.000 |     0.000
+                                                                             https://bsc-pokt.nodies.app |             0.00 |              0.000 |     0.000
+                                                                                    https://bsc.drpc.org |             0.00 |              0.000 |     0.000
+                                                                                 https://bsc.meowrpc.com |             0.00 |              0.000 |     0.000
+                                                                              https://bsc.publicnode.com |             0.00 |              0.000 |     0.000
+                                                                             https://bsc.rpc.blxrbdn.com |             0.00 |              0.000 |     0.000
+                                                                            https://koge-rpc-bsc.48.club |             0.00 |              0.000 |     0.000
+                                                                                 https://rpc-bsc.48.club |             0.00 |              0.000 |     0.000
+                                                                 https://rpc.polysplit.cloud/v1/chain/56 |             0.00 |              0.000 |     0.000
+
+```
