@@ -166,7 +166,7 @@ providers = {
 results = {}
 for chain in providers.keys():
     data = []
-    attempts_per_provider = 10
+    attempts_per_provider = 20
     for rpc in providers[chain]:
         latencies = test_rpc(rpc, num_requests=attempts_per_provider)
         count = len(latencies) / attempts_per_provider * 100
