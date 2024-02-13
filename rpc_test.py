@@ -7,133 +7,117 @@ import pprint
 # List of Ethereum RPC providers
 mainnet_rpc_providers = [
     "https://eth.llamarpc.com",
-    "https://endpoints.omniatech.io/v1/eth/mainnet/public",
-    "https://rpc.ankr.com/eth",
-    "https://go.getblock.io/d7dab8149ec04390aaa923ff2768f914",
-    "https://eth-mainnet.nodereal.io/v1/1659dfb40aa24bbb8153a677b98064d7",
-    "https://ethereum.publicnode.com",
-    "wss://ethereum.publicnode.com",
-    "https://1rpc.io/eth",
-    "https://rpc.builder0x69.io",
-    "https://rpc.mevblocker.io",
-    "https://rpc.flashbots.net",
-    "https://virginia.rpc.blxrbdn.com",
-    "https://uk.rpc.blxrbdn.com",
-    "https://singapore.rpc.blxrbdn.com",
-    "https://eth.rpc.blxrbdn.com",
-    "https://cloudflare-eth.com",
-    "https://eth-mainnet.public.blastapi.io",
-    "https://api.securerpc.com/v1",
-    "https://openapi.bitstack.com/v1/wNFxbiJyQsSeLrX8RRCHi7NpRxrlErZk/DjShIqLishPCTB9HiMkPHXjUM9CNM9Na/ETH/mainnet",
-    "https://eth-pokt.nodies.app",
-    "https://eth-mainnet-public.unifra.io",
-    "https://ethereum.blockpi.network/v1/rpc/public",
-    "https://rpc.payload.de",
-    "https://api.zmok.io/mainnet/oaen6dy8ff6hju9k",
-    "https://eth-mainnet.g.alchemy.com/v2/demo",
-    "https://eth.api.onfinality.io/public",
-    "https://core.gashawk.io/rpc",
-    "https://mainnet.eth.cloud.ava.do",
-    "https://ethereumnodelight.app.runonflux.io",
-    "https://eth-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S6g2H7WdwFigZSmPWVZRxrskEQwIf",
-    "https://main-light.eth.linkpool.io",
-    "https://rpc.eth.gateway.fm",
-    "https://rpc.chain49.com/ethereum?api_key=14d1a8b86d8a4b4797938332394203dc",
-    "https://eth.meowrpc.com",
-    "https://eth.drpc.org",
-    "https://mainnet.gateway.tenderly.co",
-    "https://rpc.tenderly.co/fork/c63af728-a183-4cfb-b24e-a92801463484",
-    "https://gateway.tenderly.co/public/mainnet",
     "https://api.zan.top/node/v1/eth/mainnet/public",
-    "https://eth-mainnet.diamondswap.org/rpc",
-    "https://rpc.notadegen.com/eth",
-    "https://eth.merkle.io",
-    "https://rpc.lokibuilder.xyz/wallet",
-    "https://services.tokenview.io/vipapi/nodeservice/eth?apikey=qVHq2o6jpaakcw3lRstl",
-    "https://eth.nodeconnect.org",
-    "https://api.mycryptoapi.com/eth",
-    "wss://mainnet.gateway.tenderly.co",
-    "https://rpc.blocknative.com/boost",
+    "https://api.zmok.io/mainnet/oaen6dy8ff6hju9k",
+    "https://rpc.flashbots.net",
     "https://rpc.flashbots.net/fast",
+    "https://eth.drpc.org",
+    "https://api.securerpc.com/v1",
+    "https://eth-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S6g2H7WdwFigZSmPWVZRxrskEQwIf",
+    "https://rpc.lokibuilder.xyz/wallet",
+    "https://endpoints.omniatech.io/v1/eth/mainnet/public",
+    "https://mainnet.gateway.tenderly.co",
+    "https://ethereum.publicnode.com",
+    "https://eth.nodeconnect.org",
+    "https://1rpc.io/eth",
+    "https://gateway.tenderly.co/public/mainnet",
+    "https://eth.meowrpc.com",
+    "https://rpc.tornadoeth.cash/eth",
+    "https://eth.merkle.io",
+    "https://rpc.notadegen.com/eth",
+    "https://eth-pokt.nodies.app",
     "https://rpc.mevblocker.io/fast",
+    "https://uk.rpc.blxrbdn.com",
+    "https://virginia.rpc.blxrbdn.com",
+    "https://singapore.rpc.blxrbdn.com",
+    "https://rpc.builder0x69.io",
+    "https://cloudflare-eth.com",
+    "https://eth.rpc.blxrbdn.com",
+    "https://core.gashawk.io/rpc",
+    "https://rpc.payload.de",
+    "https://eth-mainnet.public.blastapi.io",
+    "https://ethereum.blockpi.network/v1/rpc/public",
+    "https://rpc.mevblocker.io/fullprivacy",
+    "https://rpc.mevblocker.io",
     "https://rpc.mevblocker.io/noreverts",
-    "https://rpc.mevblocker.io/fullprivacy"
+    "https://rpc.ankr.com/eth"
+]
+
+gnosis_rpc_providers = [
+    "https://endpoints.omniatech.io/v1/gnosis/mainnet/public",
+    "https://rpc.gnosischain.com",
+    "https://gnosis.publicnode.com",
+    "https://gnosis.oat.farm",
+    "https://gnosis.drpc.org",
+    "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
+    "https://rpc.gnosis.gateway.fm",
+    "https://gnosis-pokt.nodies.app",
+    "https://gnosis.blockpi.network/v1/rpc/public",
+    "https://gnosis-mainnet.public.blastapi.io",
+    "https://rpc.ankr.com/gnosis",
+    "https://1rpc.io/gnosis",
+    "https://rpc.tornadoeth.cash/gnosis"
+]
+
+optimism_rpc_providers = [
+    "https://optimism.llamarpc.com",
+    "https://endpoints.omniatech.io/v1/op/mainnet/public",
+    "https://mainnet.optimism.io",
+    "https://gateway.tenderly.co/public/optimism",
+    "https://optimism.blockpi.network/v1/rpc/public",
+    "https://optimism.drpc.org",
+    "https://optimism.gateway.tenderly.co",
+    "https://optimism.meowrpc.com",
+    "https://rpc.optimism.gateway.fm",
+    "https://optimism-mainnet.public.blastapi.io",
+    "https://rpc.tornadoeth.cash/optimism",
+    "https://api.zan.top/node/v1/opt/mainnet/public",
+    "https://optimism.api.onfinality.io/public",
+    "https://1rpc.io/op",
+    "https://op-pokt.nodies.app",
+    "https://rpc.ankr.com/optimism",
+    "https://optimism.publicnode.com"
 ]
 
 arbitrum_rpc_providers = [
     "https://arbitrum.llamarpc.com",
-    "https://arb1.arbitrum.io/rpc",
-    "https://rpc.ankr.com/arbitrum",
-    "https://1rpc.io/arb",
-    "https://arb-pokt.nodies.app",
-    "https://arbitrum.getblock.io/api_key/mainnet",
-    "https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}",
-    "https://arb-mainnet.g.alchemy.com/v2/demo",
-    "https://arbitrum.blockpi.network/v1/rpc/public",
-    "https://arbitrum-one.public.blastapi.io",
     "https://endpoints.omniatech.io/v1/arbitrum/one/public",
+    "https://rpc.tornadoeth.cash/arbitrum",
     "https://arb-mainnet-public.unifra.io",
-    "https://arbitrum.api.onfinality.io/public",
+    "https://arbitrum-one.public.blastapi.io",
+    "https://arb1.arbitrum.io/rpc",
+    "https://arb-pokt.nodies.app",
+    "https://arbitrum.blockpi.network/v1/rpc/public",
+    "https://arbitrum.drpc.org",
     "https://rpc.arb1.arbitrum.gateway.fm",
     "https://arbitrum-one.publicnode.com",
-    "wss://arbitrum-one.publicnode.com",
-    "https://arbitrum.meowrpc.com",
+    "https://1rpc.io/arb",
+    "https://rpc.ankr.com/arbitrum",
     "https://api.zan.top/node/v1/arb/one/public",
-    "https://arbitrum.drpc.org"
+    "https://arbitrum.meowrpc.com"
 ]
 
 polygon_rpc_providers = [
     "https://polygon.llamarpc.com",
-    "https://rpc-mainnet.maticvigil.com",
-    "https://endpoints.omniatech.io/v1/matic/mainnet/public",
-    "https://polygon-rpc.com",
-    "https://rpc-mainnet.matic.network",
-    "https://rpc-mainnet.matic.quiknode.pro",
-    "https://matic-mainnet-full-rpc.bwarelabs.com",
-    "https://matic-mainnet-archive-rpc.bwarelabs.com",
-    "https://polygon-pokt.nodies.app",
-    "https://rpc.ankr.com/polygon",
-    "https://polygon-mainnet.public.blastapi.io",
-    "https://polygonapi.terminet.io/rpc",
     "https://1rpc.io/matic",
-    "https://polygon-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S6g2H7WdwFigZSmPWVZRxrskEQwIf",
-    "https://polygon-bor.publicnode.com",
-    "wss://polygon-bor.publicnode.com",
-    "https://polygon-mainnet-public.unifra.io",
-    "https://polygon-mainnet.g.alchemy.com/v2/demo",
-    "https://polygon.blockpi.network/v1/rpc/public",
-    "https://polygon.api.onfinality.io/public",
-    "https://polygon.rpc.blxrbdn.com",
+    "https://rpc-mainnet.matic.quiknode.pro",
     "https://polygon.drpc.org",
-    "https://polygon.gateway.tenderly.co",
-    "https://gateway.tenderly.co/public/polygon",
-    "https://api.zan.top/node/v1/polygon/mainnet/public",
+    "https://endpoints.omniatech.io/v1/matic/mainnet/public",
+    "https://polygon-bor.publicnode.com",
+    "https://polygon.rpc.blxrbdn.com",
+    "https://polygon-mainnet.rpcfast.com?api_key=xbhWBI1Wkguk8SNMu1bvvLurPGLXmgwYeC4S6g2H7WdwFigZSmPWVZRxrskEQwIf",
+    "https://polygon-pokt.nodies.app",
     "https://polygon.meowrpc.com",
-    "https://getblock.io/nodes/matic",
-    "wss://polygon.gateway.tenderly.co"
+    "https://polygon-rpc.com",
+    "https://polygon-mainnet.public.blastapi.io",
+    "https://rpc-mainnet.maticvigil.com",
+    "https://polygon.blockpi.network/v1/rpc/public",
+    "https://polygon.gateway.tenderly.co",
+    "https://rpc.ankr.com/polygon",
+    "https://gateway.tenderly.co/public/polygon",
+    "https://rpc.tornadoeth.cash/polygon",
+    "https://polygon.api.onfinality.io/public"
 ]
-
-gnosis_rpc_providers = [
-"""
-"https://rpc.gnosischain.com",
-    "https://xdai-archive.blockscout.com",
-    "https://gnosis-pokt.nodies.app",
-"""
-    "https://rpc.gnosis.gateway.fm",
-    "https://gnosis-mainnet.public.blastapi.io",
-    "https://rpc.ankr.com/gnosis",
-    "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
-    "https://gnosis.blockpi.network/v1/rpc/public",
-    "https://gnosis.api.onfinality.io/public",
-    "https://gnosis.drpc.org",
-    "https://endpoints.omniatech.io/v1/gnosis/mainnet/public",
-    "https://gnosis.publicnode.com",
-    "wss://gnosis.publicnode.com",
-    "https://1rpc.io/gnosis",
-    "https://gnosischain-rpc.gateway.pokt.network",
-    "https://gnosis.oat.farm"
-]
-#"""
 
 # Function to check if an RPC provider is an archive node
 def test_rpc(rpc_url, block="0xf4240", num_requests=20, address="0x0000000000000000000000000000000000000000"):
@@ -171,26 +155,41 @@ def test_rpc(rpc_url, block="0xf4240", num_requests=20, address="0x0000000000000
 
 
 # Check each RPC provider and prin0t if it's an archive node
-data = []
-attempts_per_provider = 20
-for rpc in gnosis_rpc_providers:
-    latencies = test_rpc(rpc, num_requests=attempts_per_provider)
-    count = len(latencies) / attempts_per_provider * 100
-    median = statistics.median(latencies) if len(latencies) > 0 else 0.0
-    stdev = statistics.stdev(latencies) if len(latencies) > 1 else 0.0
-    data.append([rpc, count, median, stdev])
-    if len(latencies) > 0:
-        print(f"{rpc} is an archive node. Responses: {float(count):.2f}%. Median latency: {median:.3f} +/- {stdev:.3f}s")
-    else:
-        print(f"{rpc} is not an archive node or is unreachable.")
+providers = {
+        "mainnet": mainnet_rpc_providers,
+        "gnosis": gnosis_rpc_providers,
+        "optimism": optimism_rpc_providers,
+        "arbitrum": arbitrum_rpc_providers,
+        "polygon": polygon_rpc_providers
+        }
+
+results = {}
+for chain in providers.keys():
+    data = []
+    attempts_per_provider = 10
+    for rpc in providers[chain]:
+        latencies = test_rpc(rpc, num_requests=attempts_per_provider)
+        count = len(latencies) / attempts_per_provider * 100
+        median = statistics.median(latencies) if len(latencies) > 0 else 0.0
+        stdev = statistics.stdev(latencies) if len(latencies) > 1 else 0.0
+        data.append([rpc, count, median, stdev])
+        if len(latencies) > 0:
+            print(f"{rpc} is an archive node. Responses: {float(count):.2f}%. Median latency: {median:.3f} +/- {stdev:.3f}s")
+        else:
+            print(f"{rpc} is not an archive node or is unreachable.")
 
 
-data = sorted(data, key=lambda x: (-x[1], x[2], x[0]))
-data = [row[:1] + ["{:.2f}".format(row[1])] + ["{:.3f}".format(row[2])] + ["{:.3f}".format(row[3])] for row in data]
-data.insert(0, ["RPC provider", "success rate [%]", "median latency [s]", "stdev [s]"])
-col_widths = [max(len(str(cell)) for cell in column) for column in zip(*data)]
+    data = sorted(data, key=lambda x: (-x[1], x[2], x[0]))
+    data = [row[:1] + ["{:.2f}".format(row[1])] + ["{:.3f}".format(row[2])] + ["{:.3f}".format(row[3])] for row in data]
+    data.insert(0, ["RPC provider", "success rate [%]", "median latency [s]", "stdev [s]"])
+    results[chain] = data
 
-# Print the table
-for row in data:
-    print(" | ".join(f"{cell:>{col_widths[i]}}" for i, cell in enumerate(row)))
+for chain in providers.keys():
+    data = results[chain]
+    col_widths = [max(len(str(cell)) for cell in column) for column in zip(*data)]
+
+    # Print the table
+    print(f"\n{chain}")
+    for row in data:
+        print(" | ".join(f"{cell:>{col_widths[i]}}" for i, cell in enumerate(row)))
 
