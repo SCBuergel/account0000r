@@ -12,6 +12,11 @@ import time
 from utils import _exponential_backoff, NonArchiveRpcError
 
 
+def _to_checksum(address):
+    """Returns a checksummed address (EIP-55). No-op if already checksummed."""
+    return address if Web3.is_checksum_address(address) else Web3.to_checksum_address(address)
+
+
 def _print_non_archive_warning(providers):
     if providers:
         border = "=" * 70
@@ -198,7 +203,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
     start_time = time.time()
     for a in range(len(accounts)):
-        address = accounts[a]["address"]
+        address = _to_checksum(accounts[a]["address"])
         for l in range(len(load0000rs)):
             load0000r = load0000rs[l]
             for ci in range(len(chains)):
