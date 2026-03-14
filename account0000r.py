@@ -132,7 +132,7 @@ def loadChainMetadata(load0000rs, accounts, chains):
             #    chains[ci]["metadata"][load0000r.name()] = {}
 
             metaLoad0000r = load0000r.metaLoad0000r
-            if (metaLoad0000r == {}):
+            if not metaLoad0000r:
                 print(f"{load0000r.name()} does not have a metaLoad0000r")
                 chains[ci]["metadata"][load0000r.name()] = newEntry
             else:
@@ -179,7 +179,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                 if (c["name"] not in accounts[a]["chains"]):
                     accounts[a]["chains"][c["name"]] = {}
                 if (load0000r.skipAnalysisIfEntryExists(accounts[a], c)):
-                    if (load0000r._metaLoad0000r != {}):
+                    if load0000r._metaLoad0000r:
                         print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r._metaLoad0000r.name()][load0000r.name()]['lastRun']}")
                     else:
                         print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
@@ -197,7 +197,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                         time_now = time.time()
                         if progress > 0:
                             print(f"progress: {progress:.3f}% in {time_now - start_time:.0f}s ({address} on {c['name']}, running {load0000r.name()}, estimated time remaining: {(time_now - start_time) / progress * 100 - time_now + start_time:.0f}s...)")
-                        if (load0000r._metaLoad0000r != {}):
+                        if load0000r._metaLoad0000r:
                             metaName = load0000r._metaLoad0000r.name()
                             if (metaName not in accounts[a]["chains"][c["name"]]):
                                 accounts[a]["chains"][c["name"]][metaName] = {}

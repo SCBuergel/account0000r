@@ -27,7 +27,8 @@ class blockNumberByTimestamp(baseLoad0000r):
             print(f"Error: target timestamp {self.timestamp} is later than the timestamp of the latest block (block number {biggerBlock.number}) on {chain['name']} which is {biggerBlock.timestamp}")
             return
         else:
-            while (True):
+            max_iters = 100  # log2(~1B blocks) < 30; 100 is a safe cap
+            for _ in range(max_iters):
                 print(f"smaller block number: {smallerBlock.number}, timestamp: {smallerBlock.timestamp}")
                 print(f"bigger block number:  {biggerBlock.number}, timestamp: {biggerBlock.timestamp}")
                 nextBlockNo = int((biggerBlock.number + smallerBlock.number) / 2)
@@ -35,13 +36,15 @@ class blockNumberByTimestamp(baseLoad0000r):
                 if (nextBlock.timestamp >= self.timestamp):
                     if (nextBlock.number == biggerBlock.number):
                         print(f"we're close enough, quitting here")
-                        break;
+                        break
                     biggerBlock = nextBlock
                 else:
                     if (nextBlock.number == smallerBlock.number):
                         print(f"we're close enough, quitting here")
-                        break;
+                        break
                     smallerBlock = nextBlock
+            else:
+                print(f"Warning: block bisection did not converge after {max_iters} iterations.")
 
         print(f"block {nextBlock.number} on {chain['name']} happened at time {nextBlock.timestamp}")
         return {

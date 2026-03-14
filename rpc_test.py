@@ -176,14 +176,14 @@ def test_rpc(rpc_url, block="0xf4240", num_requests=20, address="0x0000000000000
     for _ in range(num_requests):
         try:
             start_time = time.time()
-            response = requests.post(rpc_url, json=payload, headers=headers)
+            response = requests.post(rpc_url, json=payload, headers=headers, timeout=10)
             latency = time.time() - start_time
 
             if response.status_code == 200 and "result" in response.json():
                 latencies.append(latency)
-                print(f"{rpc} in {latency:.3f}s: {response.json()}")
+                print(f"{rpc_url} in {latency:.3f}s: {response.json()}")
             else:
-                print(f"{rpc} failed with code {response.status_code}: {response.json()}")
+                print(f"{rpc_url} failed with code {response.status_code}: {response.json()}")
         except requests.exceptions.RequestException as e:
             print(f"Error querying {rpc_url}: {e}")
 

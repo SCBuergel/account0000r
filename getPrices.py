@@ -3,7 +3,7 @@ import csv
 import json
 
 def get_asset_ids(tickers):
-    response = requests.get("https://api.coingecko.com/api/v3/coins/list?include_platform=false")
+    response = requests.get("https://api.coingecko.com/api/v3/coins/list?include_platform=false", timeout=10)
     data = response.json()
     # print(json.dumps(data, indent=4))
     ids = {}
@@ -20,7 +20,8 @@ def get_prices(ids, year):
     prices = {}
     for id in ids:
         response = requests.get(f"https://api.coingecko.com/api/v3/coins/{id}/history",
-                                params={"date": end_date, "localization": False, "vs_currency": vs_currency})
+                                params={"date": end_date, "localization": False, "vs_currency": vs_currency},
+                                timeout=10)
         data = response.json()
         print(f"RESPONSE: {data}")
         prices[data['symbol'].upper()] = data['market_data']['current_price'][vs_currency]

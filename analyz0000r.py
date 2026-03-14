@@ -4,6 +4,10 @@ from collections import defaultdict
 import pandas as pd
 from itertools import groupby
 import os
+from utils import deep_get
+from constants import (CHAIN_ETHEREUM, CHAIN_OPTIMISM,
+                       LOADER_ETH_BALANCE, LOADER_ETH_BALANCE_AT_BLOCK,
+                       LOADER_NONCE, LOADER_AIRDROP_OP, LOADER_AIRDROP_HOP_JSON)
 
 
 def printBinaryTable(data):
@@ -38,7 +42,7 @@ def printBinaryTable(data):
 
 
 
-def listAccountsNonZero(accounts, load0000r="ETH balance", dust=0, printCsv=False):
+def listAccountsNonZero(accounts, load0000r=LOADER_ETH_BALANCE, dust=0, printCsv=False):
     """Prints list of all accounts and chain names with non-dust balance
 
     Parameters
@@ -56,7 +60,7 @@ def listAccountsNonZero(accounts, load0000r="ETH balance", dust=0, printCsv=Fals
     print(f"List of accounts with > {dust} {load0000r} per chain")
     for a in accounts:
         for c in a["chains"].items():
-            if c[1][load0000r]["nativeBalance"] > dust:
+            if deep_get(c[1], load0000r, "nativeBalance", default=0) > dust:
                 if printCsv:
                     print(f"{a['address']}, {c[0]}, {c[1][load0000r]['nativeBalance']},")
                 else:
@@ -64,7 +68,7 @@ def listAccountsNonZero(accounts, load0000r="ETH balance", dust=0, printCsv=Fals
 
 
 
-def tableAccountsNonZeroBalance(accounts, load0000r="ETH balance", dust=0):
+def tableAccountsNonZeroBalance(accounts, load0000r=LOADER_ETH_BALANCE, dust=0):
     """Prints an overview table showing all accounts with non-dust balance
 
     Prints and overview table where all accounts with non-dust balance are highlighted with an "X" mark and all other accounts remain unmarked. This gives a quick overview of which accounts where used at all.
@@ -84,7 +88,7 @@ def tableAccountsNonZeroBalance(accounts, load0000r="ETH balance", dust=0):
             [ad["mnemonic"], ad["index"]] 
             for ad in accounts
             if sum(
-                list(v[load0000r]["nativeBalance"]
+                list(deep_get(v, load0000r, "nativeBalance", default=0)
                 for v in list(ad["chains"].values()))
                 ) > dust)
     printBinaryTable(nonZeroBalanceAccounts)
@@ -102,8 +106,8 @@ def listAccountsAirdropOP(accounts):
 
     print("List of accounts which received the Optimism airdrop")
     for a in accounts:
-        c = a["chains"]["Optimism"]
-        airdropAmount = c["airdropOpApi"]["airdropOp"]
+        c = a["chains"].get(CHAIN_OPTIMISM, {})
+        airdropAmount = deep_get(c, LOADER_AIRDROP_OP, "airdropOp", default=0)
         if airdropAmount > 0:
             print(f'OP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
 
@@ -120,8 +124,8 @@ def listAccountsAirdropHop(accounts):
 
     print("List of accounts which received the HOP airdrop")
     for a in accounts:
-        c = a["chains"]["Ethereum Main Net"]
-        airdropAmount = c["airdropHopJson"]["amountToken"]
+        c = a["chains"].get(CHAIN_ETHEREUM, {})
+        airdropAmount = deep_get(c, LOADER_AIRDROP_HOP_JSON, "amountToken", default=0)
         if airdropAmount > 0:
             print(f'HOP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
 
@@ -130,7 +134,7 @@ def listAccountsAirdropHop(accounts):
 def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
     ac = pd.DataFrame(accounts)
     c = pd.DataFrame(chains)
-    coinLoad0000r = "ETH balance at block" if atBlock else "ETH balance"
+    coinLoad0000r = LOADER_ETH_BALANCE_AT_BLOCK if atBlock else LOADER_ETH_BALANCE
     tokenLoad0000r = "ERC20 balances"
     
     # check if nativeBalance exists for all accounts
@@ -169,7 +173,7 @@ def tabulateNonZeroNonce(accounts):
     table = []
     for a in accounts:
         for c in a["chains"].values():
-            if c["nonce"]["nonce"] > 0:
+            if deep_get(c, LOADER_NONCE, "nonce", default=0) > 0:
                 table.append([a["mnemonic"], a["index"]])
                 break
     print(table)

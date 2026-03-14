@@ -1,6 +1,7 @@
 # the API seems to be rate limited so this load0000r is unlikely going to work for >10 accounts
 import requests
 from load0000rs.base import baseLoad0000r
+from constants import CHAIN_ETHEREUM
 
 class load0000r(baseLoad0000r):
     def name(self):
@@ -10,7 +11,7 @@ class load0000r(baseLoad0000r):
         return "0.0.1"
 
     def analyze(self, account, chain):
-        if chain["name"] != "Ethereum Main Net":
+        if chain["name"] != CHAIN_ETHEREUM:
             return {}
         url = "https://geteligibleuserrequest-xqbg2swtrq-uc.a.run.app/?address="
         # returns a response that looks as follows:
@@ -19,20 +20,18 @@ class load0000r(baseLoad0000r):
         #   {'status': 'ok', 'data': {'address': '0xd8da6bf26964af9d7eed9e03e53415d37aa96045', 'totalTxs': '2', 'totalVolume': '5571.29898895669', 'lpTokens': '0', 'hopUserTokens': '1354449569615422850987', 'earlyMultiplier': '1.3661093739913863', 'volumeMultiplier': '3', 'totalTokens': '1354449569615422850987', 'bridgeUserBaseAmount': '330488318481192350341
         # or response for no airdrop
         # {"status":"ok","data":{"totalTokens":"0"}}
-
-        response = requests.get(url + account)
         newEntry = self.createEmptyAccountEntry()
         try:
+            response = requests.get(url + account, timeout=10)
             respJson = response.json()
             entry = float(respJson["amount"])
         except Exception as e:
+            print(f"airdropDymApi failed for {account}: {e}")
             entry = 0
-        
+
         newEntry["airdropDym"] = entry
-        if (entry > 0):
+        if entry > 0:
             print("Dym Airdrop: ", entry, " for ", account)
         else:
             print("No Dym airdrop for:", account)
         return newEntry
-
-
