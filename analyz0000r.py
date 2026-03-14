@@ -20,7 +20,14 @@ def printBinaryTable(data):
     list[string, int] : a list with two columns, first one is the name of the mnemonic, second one is the index of the HD wallet index, all accounts included in the list are marked in the printed table
     """
 
+    if not data:
+        print("  (no accounts match — loader data may not be loaded yet)")
+        return
+
     npData = np.array(data)
+    if npData.ndim != 2 or npData.shape[1] < 2:
+        print(f"  (unexpected data shape {npData.shape}, expected list of [mnemonic, index] pairs)")
+        return
     mnemonics = sorted(set(npData[:, 0]))
     indices = sorted(set([int(elem) for elem in npData[:,1]]))
     numRows = int(max(indices)) - int(min(indices)) + 2
@@ -40,6 +47,18 @@ def printBinaryTable(data):
 
     print(tabulate(tab, headers="firstrow", tablefmt="fancy_grid"))
 
+
+
+def _check_loader_present(accounts, loader_name):
+    """Warns if no account has data for the given loader. Returns True if data exists."""
+    if not any(
+        loader_name in chain_data
+        for a in accounts
+        for chain_data in a.get("chains", {}).values()
+    ):
+        print(f"WARNING: no accounts have '{loader_name}' data loaded. Run the corresponding loader first.")
+        return False
+    return True
 
 
 def listAccountsNonZero(accounts, load0000r=LOADER_ETH_BALANCE, dust=0, printCsv=False):
@@ -84,6 +103,7 @@ def tableAccountsNonZeroBalance(accounts, load0000r=LOADER_ETH_BALANCE, dust=0):
     """
 
     print(f"Table of accounts with > {dust} {load0000r} per chain")
+    _check_loader_present(accounts, load0000r)
     nonZeroBalanceAccounts = list(
             [ad["mnemonic"], ad["index"]] 
             for ad in accounts
@@ -170,6 +190,7 @@ def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
 
 
 def tabulateNonZeroNonce(accounts):
+    _check_loader_present(accounts, LOADER_NONCE)
     table = []
     for a in accounts:
         for c in a["chains"].values():
