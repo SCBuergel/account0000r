@@ -51,6 +51,12 @@ def printBinaryTable(data):
 
 def _check_loader_present(accounts, loader_name):
     """Warns if no account has data for the given loader. Returns True if data exists."""
+    if not isinstance(accounts, list) or not accounts:
+        print(f"WARNING: accounts is empty or not a list (got {type(accounts).__name__}).")
+        return False
+    if not all(isinstance(a, dict) for a in accounts):
+        print(f"WARNING: accounts contains non-dict elements — check how accounts were loaded.")
+        return False
     if not any(
         loader_name in chain_data
         for a in accounts
