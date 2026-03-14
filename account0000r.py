@@ -48,16 +48,19 @@ def getBlockNoFromTimestamp(chains, timestamp):
     """
     for c in range(len(chains)):
         print(f"getting block number from timestamp {timestamp} on {chains[c]['api']}")
-        web3 = Web3(Web3.HTTPProvider(chains[c]["api"]))
-        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        latest_block = web3.eth.block_number
-        preceding_blockNo = _find_preceding_block_by_timestamp(timestamp, 1, latest_block, web3)
-        if "metadata" not in chains[c]:
-            chains[c]["metadata"] = {}
+        try:
+            web3 = Web3(Web3.HTTPProvider(chains[c]["api"]))
+            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            latest_block = web3.eth.block_number
+            preceding_blockNo = _find_preceding_block_by_timestamp(timestamp, 1, latest_block, web3)
+            if "metadata" not in chains[c]:
+                chains[c]["metadata"] = {}
             chains[c]["metadata"]["blockNumberByTimestamp"] = {
                 "timestamp": timestamp,
                 "blockNumber": preceding_blockNo
             }
+        except Exception as e:
+            print(f"skipping {chains[c]['api']}: {e}")
     return chains
 
 
@@ -87,13 +90,13 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=F
             for t in range(len(chains[c]["tokens"])):
                 print(f"loading token: {chains[c]['tokens'][t]}")
                 newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r, atBlock)
-
-                load0000rs.append(newLoad0000r)
-
-                # update the token which now (latest) has decimals (and symbol checked)
-                if (loadChainData):
-                    chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
-    random.shuffle(load0000rs) 
+                try:
+                    if loadChainData:
+                        chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
+                    load0000rs.append(newLoad0000r)
+                except Exception as e:
+                    print(f"skipping {chains[c]['tokens'][t]} on {chains[c]['api']}: {e}")
+    random.shuffle(load0000rs)
     return load0000rs, chains
 
 def loadChainMetadata(load0000rs, accounts, chains):
@@ -117,14 +120,21 @@ def loadChainMetadata(load0000rs, accounts, chains):
         a list of chains with the analysis results included for each chain
     """
 
+    errors = []
     print("checking ", len(chains), " chains:")
     for ci in range(len(chains)):
         c = chains[ci]
         print(f"progress: {ci / len(chains) * 100:.2f}%")
         for load0000r in load0000rs:
-            newEntry = load0000r.analyze(c, accounts)
-            if ("metadata" not in c):
-                print(f"adding new entry for \"metadata\" field")
+            try:
+                newEntry = load0000r.analyze(c, accounts)
+            except Exception as e:
+                error = f"ERROR loading {load0000r.name()} on {c['name']}: {e}"
+                print(error)
+                errors.append(error)
+                continue
+
+            if "metadata" not in c:
                 chains[ci]["metadata"] = {}
 
             # this does not seem necessary - new entry can be added directly
@@ -139,8 +149,11 @@ def loadChainMetadata(load0000rs, accounts, chains):
                 print(f"{load0000r.name()} does have a metaLoad0000r: {metaLoad0000r.name()}")
                 if (metaLoad0000r.name() not in chains[ci]["metadata"]):
                     chains[ci]["metadata"][metaLoad0000r.name()] = {}
-                chains[ci]["metadata"][metaLoad0000r.name()][load0000r.name()] = newEntry() 
-                # TODO: write to file (task 6) 
+                chains[ci]["metadata"][metaLoad0000r.name()][load0000r.name()] = newEntry()
+                # TODO: write to file (task 6)
+    if errors:
+        print(f"{len(errors)} errors:")
+        print(*errors, sep="\n")
     return chains
 
 
