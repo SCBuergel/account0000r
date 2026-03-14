@@ -9,7 +9,18 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 import random
 import time
-from utils import _exponential_backoff
+from utils import _exponential_backoff, NonArchiveRpcError
+
+
+def _print_non_archive_warning(providers):
+    if providers:
+        border = "=" * 70
+        print(f"\n{border}")
+        print("WARNING: The following RPC providers do not support archive data")
+        print("and were skipped. Use a different RPC endpoint for historical queries:")
+        for p in sorted(providers):
+            print(f"  {p}")
+        print(border + "\n")
 from load0000rs.singleErc20 import load0000r
 
 def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block, web3):
@@ -121,6 +132,7 @@ def loadChainMetadata(load0000rs, accounts, chains):
     """
 
     errors = []
+    non_archive_rpcs = set()
     print("checking ", len(chains), " chains:")
     for ci in range(len(chains)):
         c = chains[ci]
@@ -128,6 +140,9 @@ def loadChainMetadata(load0000rs, accounts, chains):
         for load0000r in load0000rs:
             try:
                 newEntry = load0000r.analyze(c, accounts)
+            except NonArchiveRpcError as e:
+                non_archive_rpcs.add(str(e))
+                continue
             except Exception as e:
                 error = f"ERROR loading {load0000r.name()} on {c['name']}: {e}"
                 print(error)
@@ -151,6 +166,7 @@ def loadChainMetadata(load0000rs, accounts, chains):
                     chains[ci]["metadata"][metaLoad0000r.name()] = {}
                 chains[ci]["metadata"][metaLoad0000r.name()][load0000r.name()] = newEntry()
                 # TODO: write to file (task 6)
+    _print_non_archive_warning(non_archive_rpcs)
     if errors:
         print(f"{len(errors)} errors:")
         print(*errors, sep="\n")
@@ -178,6 +194,7 @@ def loadAccountMetadata(load0000rs, accounts, chains):
     """
 
     errors = []
+    non_archive_rpcs = set()
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
     start_time = time.time()
     for a in range(len(accounts)):
@@ -200,6 +217,9 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                 else:
                     try:
                         newEntry = load0000r.analyze(address, c)
+                    except NonArchiveRpcError as e:
+                        non_archive_rpcs.add(str(e))
+                        continue
                     except Exception as e:
                         error = f"ERROR loading {load0000r.name()} for {address} on {c['name']}, {e}"
                         print(error)
@@ -217,7 +237,8 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                             accounts[a]["chains"][c["name"]][metaName][load0000r.name()] = newEntry
                         else:
                             accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
-    if (len(errors) > 0):
+    _print_non_archive_warning(non_archive_rpcs)
+    if errors:
         print(f"{len(errors)} errors:")
         print(*errors, sep="\n")
     return accounts, errors

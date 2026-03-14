@@ -1,6 +1,16 @@
 import time
 
 
+class NonArchiveRpcError(Exception):
+    """Raised when an RPC provider does not support archive/historical data."""
+    pass
+
+
+def _is_non_archive_error(e):
+    msg = str(e).lower()
+    return "missing trie node" in msg or ("is not available" in msg and "not found" in msg)
+
+
 def deep_get(d, *keys, default=None):
     """Safely traverse nested dicts: deep_get(obj, "a", "b", "c", default=0)"""
     for key in keys:
@@ -24,6 +34,12 @@ def _exponential_backoff(func, *args, max_wait=20, max_attempts=10, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception as e:
+            if _is_non_archive_error(e):
+                try:
+                    provider = str(func.__self__.w3.provider)
+                except AttributeError:
+                    provider = "unknown provider"
+                raise NonArchiveRpcError(provider) from e
             try:
                 provider_info = f" (provider: {func.__self__.w3.provider})"
             except AttributeError:
