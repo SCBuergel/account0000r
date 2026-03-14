@@ -163,22 +163,24 @@ def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
     coinLoad0000r = LOADER_ETH_BALANCE_AT_BLOCK if atBlock else LOADER_ETH_BALANCE
     tokenLoad0000r = "ERC20 balances"
     
-    # check if nativeBalance exists for all accounts
+    missing = []
+    coinRows = []
     for a in range(ac.shape[0]):
-        for chainItems in ac.iloc[a]["chains"].items():
-            
-            if coinLoad0000r not in chainItems[1]:
-                raise KeyError(f"missing '{coinLoad0000r}' in '{chainItems[0]}' of '{ac.iloc[a]['address']}'")
+        address = ac.iloc[a]['address']
+        for chainName, chainData in ac.iloc[a]["chains"].items():
+            balance = deep_get(chainData, coinLoad0000r, "nativeBalance")
+            if balance is None:
+                missing.append(f"  {address} on {chainName}: '{coinLoad0000r}' not loaded")
+                continue
+            if balance > dust:
+                nativeAsset = c[c.name == chainName].nativeAsset.to_string(index=False).strip()
+                coinRows.append([address, chainName, balance, nativeAsset])
 
-            if "nativeBalance" not in chainItems[1][coinLoad0000r]:
-                raise ValueError(f"missing 'nativeBalance' in {chainItems[1]}")
-    
-    coinBalances = pd.DataFrame([
-    [ac.iloc[a]['address'], chainItems[0], chainItems[1][coinLoad0000r]["nativeBalance"], c[c.name == chainItems[0]].nativeAsset.to_string(index=False).strip()]
-    for a in range(ac.shape[0])
-    for chainItems in ac.iloc[a]["chains"].items()
-    if chainItems[1][coinLoad0000r]["nativeBalance"] > dust
-    ])
+    if missing:
+        print(f"WARNING: missing '{coinLoad0000r}' data for {len(missing)} account/chain combinations (skipped):")
+        print("\n".join(missing))
+
+    coinBalances = pd.DataFrame(coinRows)
 
     tokenBalances = pd.DataFrame()
     for a in range(ac.shape[0]):
