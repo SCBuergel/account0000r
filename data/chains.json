@@ -177,7 +177,7 @@
   },
   { 
     "name": "Arbitrum",
-    "api": "https://rpc.ankr.com/arbitrum",
+    "api": "https://arbitrum-one.public.blastapi.io",
     "id": 42161,
     "nativeAsset": "ETH",
     "tokens":
