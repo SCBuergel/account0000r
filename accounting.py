@@ -16,6 +16,7 @@ Typical run order:
 """
 
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from web3 import Web3
 import account0000r
 import analyz0000r
@@ -58,47 +59,64 @@ PRICE_ALIASES = {
 
 # ─── Steps ────────────────────────────────────────────────────────────────────
 
+def _check_single_chain(chain):
+    """Worker: probe one chain for connectivity and archive capability.
+    Returns (connectivity_ok, archive_ok, detail_message).
+    Runs in a thread — must not print directly.
+    """
+    name = chain["name"]
+    api  = chain["api"]
+
+    try:
+        w3     = Web3(Web3.HTTPProvider(api))
+        latest = w3.eth.get_block("latest")
+    except Exception as e:
+        return False, False, f"CONNECTIVITY FAILED — {e}"
+
+    conn_msg = f"connectivity OK — latest block {latest.number} ({ts_to_utc(latest.timestamp)})"
+
+    try:
+        w3.eth.get_balance("0x0000000000000000000000000000000000000000", 1)
+        return True, True, conn_msg
+    except Exception as e:
+        if _is_non_archive_error(e):
+            arch_msg = "NOT an archive node"
+        else:
+            arch_msg = f"archive check error — {e}"
+        return True, False, f"{conn_msg} | {arch_msg}"
+
+
 def step0_check_chains():
     """Verify that every chain in CHAINS_FILE has a working RPC provider
     with archive capabilities.
 
-    Checks two things for each chain:
+    All chains are probed in parallel.  Each request is logged the moment it
+    is dispatched; results are printed as they arrive.
+
+    Checks two things per chain:
       1. Basic connectivity — can the RPC be reached and return the latest block?
       2. Archive capability — can it serve historical state (required for step4)?
-
-    Prints a summary and actionable guidance for any failures.  Does not abort
-    on failure so you get a full picture of all chains in one run.
     """
     chains = json.load(open(CHAINS_FILE))
-    print(f"step0: checking {len(chains)} chain(s) from {CHAINS_FILE}\n")
+    print(f"step0: checking {len(chains)} chain(s) from {CHAINS_FILE}")
 
     failed_connectivity = []
     failed_archive      = []
 
-    for chain in chains:
-        name = chain["name"]
-        api  = chain["api"]
+    with ThreadPoolExecutor(max_workers=len(chains)) as executor:
+        futures = {}
+        for chain in chains:
+            print(f"  [{chain['name']}] sending request...")
+            futures[executor.submit(_check_single_chain, chain)] = chain["name"]
 
-        # ── connectivity ──────────────────────────────────────────────────────
-        try:
-            w3 = Web3(Web3.HTTPProvider(api))
-            latest = w3.eth.get_block("latest")
-            print(f"  [{name}] connectivity OK — latest block {latest.number} ({ts_to_utc(latest.timestamp)})")
-        except Exception as e:
-            print(f"  [{name}] CONNECTIVITY FAILED — {e}")
-            failed_connectivity.append(name)
-            continue   # no point probing archive if the node is unreachable
-
-        # ── archive capability ────────────────────────────────────────────────
-        try:
-            w3.eth.get_balance("0x0000000000000000000000000000000000000000", 1)
-            print(f"  [{name}] archive OK")
-        except Exception as e:
-            if _is_non_archive_error(e):
-                print(f"  [{name}] NOT an archive node")
-            else:
-                print(f"  [{name}] archive check error — {e}")
-            failed_archive.append(name)
+        for future in as_completed(futures):
+            name = futures[future]
+            conn_ok, arch_ok, msg = future.result()
+            print(f"  [{name}] {msg}")
+            if not conn_ok:
+                failed_connectivity.append(name)
+            elif not arch_ok:
+                failed_archive.append(name)
 
     # ── summary ───────────────────────────────────────────────────────────────
     print()
