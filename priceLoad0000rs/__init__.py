@@ -99,7 +99,8 @@ def loadAssetPrices(
         fetched, remaining = loader.load(remaining, timestamp)
         prices.update(fetched)
         if fetched:
-            print(f"[loadAssetPrices] {loader.name()} resolved: {sorted(fetched)}")
+            for sym, price in sorted(fetched.items()):
+                print(f"  {sym}: ${price:,.4f}")
 
     if remaining:
         print(

@@ -1,8 +1,10 @@
+import time
 import requests
 from priceLoad0000rs.base import basePriceLoad0000r
 
 
 _BASE_URL = "https://min-api.cryptocompare.com/data/v2/histoday"
+_RATE_LIMIT_MSG = "you are over your rate limit"
 
 
 class load0000r(basePriceLoad0000r):
@@ -32,13 +34,32 @@ class load0000r(basePriceLoad0000r):
             "limit": 1,
             "toTs": timestamp,
         }
-        response = requests.get(_BASE_URL, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
 
-        if data.get("Response") != "Success":
-            print(f"[cryptocompare] non-success response for {symbol}: {data.get('Message', '')}")
-            return None
+        attempt = 0
+        wait_time = 1
+        max_attempts = 10
+        max_wait = 60
+
+        while True:
+            response = requests.get(_BASE_URL, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get("Response") == "Success":
+                break
+
+            message = data.get("Message", "")
+            if _RATE_LIMIT_MSG in message.lower():
+                attempt += 1
+                if attempt > max_attempts:
+                    print(f"[cryptocompare] rate limit exceeded after {max_attempts} retries for {symbol}, giving up")
+                    return None
+                print(f"[cryptocompare] rate limited for {symbol}, retrying in {wait_time}s (attempt {attempt}/{max_attempts})")
+                time.sleep(wait_time)
+                wait_time = min(2 ** attempt, max_wait)
+            else:
+                print(f"[cryptocompare] non-success response for {symbol}: {message}")
+                return None
 
         candles = data.get("Data", {}).get("Data", [])
         if not candles:
