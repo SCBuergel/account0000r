@@ -39,8 +39,9 @@ CHAINS_FILE       = "data/chains.json"
 MANUAL_PRICES_FILE = "data/assetPrices-manual.csv"   # hand-maintained prices for obscure tokens
 
 # Intermediate and output files (auto-named by year; normally no need to change)
-CHAINS_BLOCKS_FILE  = f"data/chains-{EOY_YEAR}-blocks.json"   # chains + EOY block numbers
-CHAINS_TOKENS_FILE  = f"data/chains-{EOY_YEAR}-tokens.json"   # chains + token metadata
+ACCOUNTS_BLANK_FILE = "data/accounts-blank.json"                # plain addresses, no balance data (step1 output)
+CHAINS_BLOCKS_FILE  = f"data/chains-{EOY_YEAR}-blocks.json"    # chains + EOY block numbers
+CHAINS_TOKENS_FILE  = f"data/chains-{EOY_YEAR}-tokens.json"    # chains + token metadata
 ACCOUNTS_FILE       = f"data/accounts-{EOY_YEAR}.json"         # accounts + all balances
 PRICES_FILE         = f"data/assetPrices-{EOY_YEAR}.csv"       # EOY USD prices
 
@@ -139,18 +140,21 @@ def step0_check_chains():
 
 
 def step1_derive_accounts():
-    """Derive HD wallet accounts from secrets.json and save to ACCOUNTS_FILE.
+    """Derive HD wallet accounts from secrets.json and save to ACCOUNTS_BLANK_FILE.
 
-    Re-run if you add a new mnemonic or change the number of derived accounts.
-    If you maintain your accounts manually rather than from a mnemonic, skip
-    this step and write a JSON list directly to ACCOUNTS_FILE instead
+    Writes plain address/index/mnemonic records with no balance data.  This
+    file is the stable seed used by step4 — re-run step1 only when adding
+    mnemonics or changing the number of derived accounts.
+
+    If you manage accounts manually rather than from a mnemonic, skip this
+    step and write a JSON list directly to ACCOUNTS_BLANK_FILE instead
     (see README for the required format).
     """
     secrets  = json.load(open(SECRETS_FILE))
     accounts = account0000r.accountsFromSecrets(secrets)
 
-    account0000r.writeJson(accounts, ACCOUNTS_FILE)
-    print(f"step1: {len(accounts)} accounts written to {ACCOUNTS_FILE}")
+    account0000r.writeJson(accounts, ACCOUNTS_BLANK_FILE)
+    print(f"step1: {len(accounts)} accounts written to {ACCOUNTS_BLANK_FILE}")
 
 
 def step2_find_eoy_blocks():
@@ -194,9 +198,13 @@ def step4_load_eoy_balances():
 
     This is the slowest step — it makes one RPC call per account per token per
     chain.  Re-running is safe: existing entries are kept and any missing ones
-    are filled in.  To force a full re-fetch, delete ACCOUNTS_FILE first.
+    are filled in.  To force a full re-fetch, delete ACCOUNTS_FILE first and
+    re-run — it will restart from the blank accounts in ACCOUNTS_BLANK_FILE.
     """
-    accounts  = json.load(open(ACCOUNTS_FILE))
+    import os
+    source = ACCOUNTS_FILE if os.path.exists(ACCOUNTS_FILE) else ACCOUNTS_BLANK_FILE
+    print(f"step4: loading accounts from {source}")
+    accounts  = json.load(open(source))
     chains    = json.load(open(CHAINS_TOKENS_FILE))
     metaErc20 = metaLoad0000rErc20.load0000r()
 
@@ -261,7 +269,7 @@ def step6_portfolio_analysis():
 # exists and is up to date.
 
 # step0_check_chains()        # run when setting up or changing chains.json → prints pass/fail per chain
-# step1_derive_accounts()     # run once: secrets.json → ACCOUNTS_FILE
+# step1_derive_accounts()     # run once: secrets.json → ACCOUNTS_BLANK_FILE
 # step2_find_eoy_blocks()     # run once per year: chains.json → CHAINS_BLOCKS_FILE
 # step3_load_token_metadata() # run when chains.json changes → CHAINS_TOKENS_FILE
 # step4_load_eoy_balances()   # run once per year (slow) → ACCOUNTS_FILE
