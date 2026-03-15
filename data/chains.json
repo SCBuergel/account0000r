@@ -7,20 +7,8 @@
     "tokens":
     [
       {
-        "symbol": "1INCH",
-        "address": "0x111111111117dC0aa78b770fA6A738034120C302"
-      },
-      {
         "symbol": "AAVE",
         "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
-      },
-      {
-        "symbol": "AMB",
-        "address": "0x4DC3643DbC642b72C158E7F3d2ff232df61cb6CE"
-      },
-      {
-        "symbol": "BAL",
-        "address": "0xba100000625a3754423978a60c9317c58a424e3D"
       },
       {
         "symbol": "BNB",
@@ -43,10 +31,6 @@
         "address": "0xD533a949740bb3306d119CC777fa900bA034cd52"
       },
       {
-        "symbol": "cSAI",
-        "address": "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC"
-      },
-      {
         "symbol": "cUSDC",
         "address": "0x39AA39c021dfbaE8faC545936693aC917d5E7563"
       },
@@ -67,10 +51,6 @@
         "address": "0x956F47F50A910163D8BF957Cf5846D573E7f87CA"
       },
       {
-        "symbol": "FOAM",
-        "address": "0x4946Fcea7C692606e8908002e55A582af44AC121"
-      },
-      {
         "symbol": "GEAR",
         "address": "0xBa3335588D9403515223F109EdC4eB7269a9Ab5D"
       },
@@ -83,16 +63,8 @@
         "address": "0x6810e776880C02933D47DB1b9fc05908e5386b96"
       },
       {
-        "symbol": "GOT",
-        "address": "0x613Fa2A6e6DAA70c659060E86bA1443D2679c9D7"
-      },
-      {
         "symbol": "GTC",
         "address": "0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F"
-      },
-      {
-        "symbol": "HEX",
-        "address": "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39"
       },
       {
         "symbol": "HOP",
@@ -101,14 +73,6 @@
       {
         "symbol": "HOPR",
         "address": "0xF5581dFeFD8Fb0e4aeC526bE659CFaB1f8c781dA"
-      },
-      {
-        "symbol": "LEND",
-        "address": "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03"
-      },
-      {
-        "symbol": "LRC",
-        "address": "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD"
       },
       {
         "symbol": "MATIC",
@@ -127,22 +91,6 @@
         "address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359"
       },
       {
-        "symbol": "SCRT",
-        "address": "0x2B89bF8ba858cd2FCee1faDa378D5cd6936968Be"
-      },
-      {
-        "symbol": "SNX",
-        "address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
-      },
-      {
-        "symbol": "SPANK",
-        "address": "0x42d6622deCe394b54999Fbd73D108123806f6a18"
-      },
-      {
-        "symbol": "STAKE",
-        "address": "0x0Ae055097C6d159879521C384F1D2123D1f195e6"
-      },
-      {
         "symbol": "stETH",
         "address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"
       },
@@ -159,14 +107,6 @@
         "address": "0x6cAcDB97e3fC8136805a9E7c342d866ab77D0957"
       },
       {
-        "symbol": "TORN",
-        "address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C"
-      },
-      {
-        "symbol": "UAC",
-        "address": "0x4297a285db467eB779FCc45F69A169bd8dCCd0e9"
-      },
-      {
         "symbol": "UNI",
         "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
       },
@@ -179,10 +119,6 @@
         "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
       },
       {
-        "symbol": "VIO",
-        "address": "0x94fFb55Ce68231C5966ea8DAb16A8F066846513f"
-      },
-      {
         "symbol": "WETH",
         "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
       }
@@ -190,7 +126,7 @@
   },
   {
     "name": "Gnosis Chain",
-    "api": "https://rpc.ankr.com/gnosis",
+    "api": "https://rpc.gnosischain.com",
     "id": 100,
     "nativeAsset": "xDAI",
     "tokens":
@@ -210,7 +146,21 @@
       {
         "symbol": "xHOPR",
         "address": "0xD057604A14982FE8D88c5fC25Aac3267eA142a08"
+      },
+      {
+        "symbol": "EURe",
+        "address": "0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430"
+      },
+      {
+        "symbol": "USDC",
+        "address": "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83"
+      },
+      {
+        "symbol": "USDC.E",
+        "address": "0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0"
       }
+
+
     ]
   },
   {
