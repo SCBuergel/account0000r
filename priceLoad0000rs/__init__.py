@@ -2,7 +2,7 @@
 
 Usage example::
 
-    from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp
+    from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp, exportPrices
     from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
     from priceLoad0000rs.coingecko import load0000r as CoinGecko
     from priceLoad0000rs.manual import load0000r as Manual
@@ -12,12 +12,10 @@ Usage example::
     symbols = collectSymbols(accounts, chains)
     ts = eoyTimestamp(2024)
     prices = loadAssetPrices(symbols, ts, loaders)
-
-    # prices is a plain dict {symbol: float}, ready for portfolioValue()
-    # or export via getPrices.export_prices(prices, "data/assetPrices2024.csv")
+    exportPrices(prices, "data/assetPrices-EOY2024.csv")
 """
 
-from calendar import timegm
+import csv
 from datetime import datetime, timezone
 
 from priceLoad0000rs.base import basePriceLoad0000r
@@ -110,3 +108,20 @@ def loadAssetPrices(
         )
 
     return prices
+
+
+def exportPrices(prices: dict, filename: str) -> None:
+    """Write *prices* to a CSV file in the Asset,Price format consumed by portfolioValue().
+
+    Parameters
+    ----------
+    prices : dict[str, float]
+        Symbol → USD price mapping, as returned by loadAssetPrices.
+    filename : str
+        Output path, e.g. "data/assetPrices-EOY2024.csv".
+    """
+    with open(filename, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Asset", "Price"])
+        for asset, price in prices.items():
+            writer.writerow([asset, price])

@@ -83,11 +83,10 @@ TODO
 ### EOY ASSET PRICES
 # Step 1: load account data and chains as usual (sections 1-3 above), then:
 #
-#from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp
+#from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp, exportPrices
 #from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
 #from priceLoad0000rs.coingecko import load0000r as CoinGecko
 #from priceLoad0000rs.manual import load0000r as Manual
-#from getPrices import export_prices
 #
 # Step 2: derive all symbols that appear in the loaded accounts (native + ERC-20)
 #symbols = collectSymbols(accounts, chains)
@@ -98,7 +97,7 @@ TODO
 #prices = loadAssetPrices(symbols, eoyTimestamp(2024), priceLoaders)
 #
 # Step 4: write CSV and display portfolio value
-#export_prices(prices, "data/assetPrices-EOY2024.csv")
+#exportPrices(prices, "data/assetPrices-EOY2024.csv")
 #analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2024.csv", atBlock=atBlock)
 
 

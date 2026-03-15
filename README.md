@@ -248,17 +248,16 @@ It mirrors the `load0000rs` pattern: a base class defines the interface, concret
 ### Example
 
 ```python
-from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp
+from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp, exportPrices
 from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
 from priceLoad0000rs.coingecko import load0000r as CoinGecko
 from priceLoad0000rs.manual import load0000r as Manual
-from getPrices import export_prices
 
 # accounts and chains must already be loaded
 loaders = [CryptoCompare(), CoinGecko(), Manual("data/assetPrices-manual.csv")]
 symbols = collectSymbols(accounts, chains)   # e.g. ["ETH", "GNO", "USDC", "xDAI"]
 prices  = loadAssetPrices(symbols, eoyTimestamp(2024), loaders)
-export_prices(prices, "data/assetPrices-EOY2024.csv")
+exportPrices(prices, "data/assetPrices-EOY2024.csv")
 
 # now use it
 analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2024.csv")
