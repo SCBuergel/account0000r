@@ -86,6 +86,12 @@ While you can write the analysis functions however you please, it is recommended
 │   ├── base.py       - contains the base class `baseLoad0000r`
 │   ├── ethBalance.py - native balance loader
 │   └── nonce.py      - account nonce loader
+├── priceLoad0000rs
+│   ├── __init__.py         - orchestrator: `loadAssetPrices`, `collectSymbols`, `eoyTimestamp`
+│   ├── base.py             - abstract `basePriceLoad0000r` class
+│   ├── cryptocompare.py    - primary price source (CryptoCompare histoday API, no key required)
+│   ├── coingecko.py        - fallback price source (CoinGecko history API)
+│   └── manual.py           - last-resort override from a hand-maintained CSV file
 ├── account0000r.py - the main account0000r module with the main functions
 ├── analyz0000r.py - contains the functions which are used inside the `runn0000r.py` file to print analysis results of account metadata.
 ├── chains.json - the settings file of the chains from which to load metadata
@@ -218,6 +224,66 @@ Prints a binary table of accounts with non-zero nonces, sorted by mnemonic and i
 │       9 │        │        │        │ X      │
 ╘═════════╧════════╧════════╧════════╧════════╛
 ```
+
+## EOY asset prices
+
+The `priceLoad0000rs` module fetches end-of-year (or any-date) closing prices in USD for a list of asset symbols.
+It mirrors the `load0000rs` pattern: a base class defines the interface, concrete implementations provide the data, and an orchestrator function ties them together.
+
+### How it works
+
+1. **Collect symbols** — `collectSymbols(accounts, chains)` scans your loaded account data and chain definitions to build the full list of asset tickers that appear with a non-zero balance (native coins + ERC-20 tokens). No manual list maintenance needed.
+2. **Pick a timestamp** — `eoyTimestamp(year)` returns the Unix timestamp for midnight UTC on Jan 1 of `year + 1`, which is the conventional EOY snapshot point. You can also supply any Unix timestamp directly.
+3. **Load prices** — `loadAssetPrices(symbols, timestamp, loaders)` tries each loader in order. The first loader that returns a price for a symbol wins; remaining symbols are passed to the next loader. Any symbol with no price found is reported as a warning.
+4. **Export** — the returned `dict[symbol → price]` can be written to a CSV with `getPrices.export_prices()` and consumed directly by `analyz0000r.portfolioValue()`.
+
+### Price loaders
+
+| Loader | Source | Notes |
+|--------|--------|-------|
+| `cryptocompare.CryptoCompare` | [CryptoCompare histoday API](https://min-api.cryptocompare.com) | No API key needed. Primary source for most assets. Returns the daily close at the given timestamp. |
+| `coingecko.CoinGecko` | [CoinGecko history API](https://www.coingecko.com/en/api) | No API key for public tier. Fetches the full coin list once to resolve symbol→id mapping. Pass `symbol_overrides={"WETH": "weth"}` to resolve ambiguous tickers. |
+| `manual.Manual` | Local CSV file | Reads the same `Asset,Price` CSV format that `portfolioValue()` consumes. Use for illiquid or obscure tokens (SAI, STAKE, FOAM, …) that APIs no longer cover. Silent no-op if the file is absent. |
+
+### Example
+
+```python
+from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp
+from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
+from priceLoad0000rs.coingecko import load0000r as CoinGecko
+from priceLoad0000rs.manual import load0000r as Manual
+from getPrices import export_prices
+
+# accounts and chains must already be loaded
+loaders = [CryptoCompare(), CoinGecko(), Manual("data/assetPrices-manual.csv")]
+symbols = collectSymbols(accounts, chains)   # e.g. ["ETH", "GNO", "USDC", "xDAI"]
+prices  = loadAssetPrices(symbols, eoyTimestamp(2024), loaders)
+export_prices(prices, "data/assetPrices-EOY2024.csv")
+
+# now use it
+analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2024.csv")
+```
+
+Any symbols that no loader could resolve are printed as a warning. Add them to your manual CSV and re-run.
+
+### Writing your own price loader
+
+Subclass `basePriceLoad0000r` from `priceLoad0000rs/base.py` and implement three methods:
+
+```python
+from priceLoad0000rs.base import basePriceLoad0000r
+
+class load0000r(basePriceLoad0000r):
+    def name(self) -> str:    return "mysource"
+    def version(self) -> str: return "0.0.1"
+    def fetchPrice(self, symbol: str, timestamp: int) -> float | None:
+        # fetch and return closing USD price, or None if unavailable
+        ...
+```
+
+Pass an instance as part of the `loaders` list to `loadAssetPrices`.
+
+
 
 ## Utils
 Some utils do not fit into a generalized structure yet and are described here

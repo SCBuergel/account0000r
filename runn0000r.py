@@ -80,6 +80,28 @@ TODO
 #account0000r.writeJson(accounts)
 
 
+### EOY ASSET PRICES
+# Step 1: load account data and chains as usual (sections 1-3 above), then:
+#
+#from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp
+#from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
+#from priceLoad0000rs.coingecko import load0000r as CoinGecko
+#from priceLoad0000rs.manual import load0000r as Manual
+#from getPrices import export_prices
+#
+# Step 2: derive all symbols that appear in the loaded accounts (native + ERC-20)
+#symbols = collectSymbols(accounts, chains)
+#
+# Step 3: fetch prices — loaders are tried in order, first success per symbol wins
+# add any symbol→price overrides for illiquid tokens to data/assetPrices-manual.csv
+#priceLoaders = [CryptoCompare(), CoinGecko(), Manual("data/assetPrices-manual.csv")]
+#prices = loadAssetPrices(symbols, eoyTimestamp(2024), priceLoaders)
+#
+# Step 4: write CSV and display portfolio value
+#export_prices(prices, "data/assetPrices-EOY2024.csv")
+#analyz0000r.portfolioValue(accounts, chains, assetPricesCsv="data/assetPrices-EOY2024.csv", atBlock=atBlock)
+
+
 ### 3. OPEN ACCOUNTS, DISPLAY
 chains = json.load(open("data/chains-eoy2022-tokens.json"))
 accounts1 = json.load(open("data/accounts-2024-01-02--11-54-03--EOY2023.json"))
