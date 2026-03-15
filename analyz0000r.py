@@ -249,6 +249,8 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
         prices = pd.DataFrame(columns=["Asset", "Price"])
     accountBalances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
     chainDf = pd.DataFrame(chains)
+    accountBalances["Asset"] = accountBalances["Asset"].str.upper()
+    prices["Asset"] = prices["Asset"].str.upper()
     accountBalances = accountBalances.join(prices.set_index("Asset"), on="Asset")
     accountValues = pd.DataFrame(accountBalances.Balance * accountBalances.Price)
     accountBalances = pd.concat([accountBalances, accountValues], axis=1)
@@ -264,7 +266,8 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
 
     prettyBalances = accountBalances.copy()
     prettyBalances.Balance = prettyBalances.Balance.map('{:,}'.format)
-    prettyBalances.Value = prettyBalances.Value.map('${:,.2f}'.format)
+    prettyBalances.Price = prettyBalances.Price.map(lambda p: f'${p:,.4f}' if pd.notna(p) else '(no price)')
+    prettyBalances.Value = prettyBalances.Value.map(lambda v: f'${v:,.2f}' if pd.notna(v) else '?')
 
     print("All accounts and balances:")
     print(prettyBalances.to_string(index=False))
@@ -283,9 +286,11 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
     print("Accounts by total balance value:")
     print(valueByAccount.sort_values(by="Value", ascending=False)[["Fiat value"]].to_string())
 
-    print(f"\nTotal portfolio value: ${accountBalances.Balance.mul(accountBalances.Price).sum():,.2f}")
+    missing_assets = np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())
+    print(f"\nTotal portfolio value (priced assets only): ${accountBalances.Balance.mul(accountBalances.Price).sum():,.2f}")
 
-    print(f"\nMissing asset prices for: {np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())}")
+    if len(missing_assets) > 0:
+        print(f"\nWARNING: no price for {len(missing_assets)} asset(s) — total is likely higher: {missing_assets}")
 
     if storeCsv:
         print("storing CSV files...")
