@@ -82,7 +82,7 @@ class load0000r(basePriceLoad0000r):
             return None
         return price
 
-    def load(self, symbols: list[str], timestamp: int) -> tuple[dict, list[str]]:
+    def load(self, symbols: list[str], timestamp: int, resolved: dict | None = None) -> tuple[dict, list[str]]:
         """Override to pre-resolve the full symbol list in one API call."""
         self._ensure_id_map(symbols)
         return super().load(symbols, timestamp)

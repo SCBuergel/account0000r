@@ -28,8 +28,15 @@ class basePriceLoad0000r(ABC):
         """
         pass
 
-    def load(self, symbols: list[str], timestamp: int) -> tuple[dict, list[str]]:
+    def load(self, symbols: list[str], timestamp: int, resolved: dict | None = None) -> tuple[dict, list[str]]:
         """Fetch prices for all *symbols* at *timestamp*.
+
+        Parameters
+        ----------
+        resolved : dict[str, float], optional
+            Prices already fetched by earlier loaders in the pipeline.  Most
+            loaders ignore this; the aliases loader uses it to look up
+            underlying asset prices.
 
         Returns
         -------

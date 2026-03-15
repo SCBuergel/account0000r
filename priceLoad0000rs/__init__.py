@@ -96,7 +96,7 @@ def loadAssetPrices(
         if not remaining:
             break
         print(f"[loadAssetPrices] trying {loader.name()} for {len(remaining)} symbol(s): {remaining}")
-        fetched, remaining = loader.load(remaining, timestamp)
+        fetched, remaining = loader.load(remaining, timestamp, resolved=prices)
         prices.update(fetched)
         if fetched:
             for sym, price in sorted(fetched.items()):

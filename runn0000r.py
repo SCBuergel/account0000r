@@ -86,14 +86,21 @@ TODO
 #from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp, exportPrices
 #from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
 #from priceLoad0000rs.coingecko import load0000r as CoinGecko
+#from priceLoad0000rs.aliases import load0000r as Aliases
 #from priceLoad0000rs.manual import load0000r as Manual
 #
 # Step 2: derive all symbols that appear in the loaded accounts (native + ERC-20)
 #symbols = collectSymbols(accounts, chains)
 #
 # Step 3: fetch prices — loaders are tried in order, first success per symbol wins
+# Aliases must be last so that underlying prices are already resolved.
 # add any symbol→price overrides for illiquid tokens to data/assetPrices-manual.csv
-#priceLoaders = [CryptoCompare(), CoinGecko(), Manual("data/assetPrices-manual.csv")]
+#priceLoaders = [
+#    CryptoCompare(),
+#    CoinGecko(),
+#    Aliases({"XHOPR": "HOPR", "WXHOPR": "HOPR", "STKAAVE": "AAVE", "RETH": "ETH", "STETH": "ETH", "WETH": "ETH"}),
+#    Manual("data/assetPrices-manual.csv"),
+#]
 #prices = loadAssetPrices(symbols, eoyTimestamp(2024), priceLoaders)
 #
 # Step 4: write CSV and display portfolio value
