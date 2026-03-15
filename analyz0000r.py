@@ -273,6 +273,25 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
     print(prettyBalances.to_string(index=False))
 
     valueByAsset = pd.DataFrame(accountBalances.groupby("Asset").agg({"Balance": "sum", "Value": "sum", "Price": "first"}))
+
+    # Append zero-balance assets defined in chains but absent from all accounts
+    allChainAssets = set()
+    for chain in chains:
+        if chain.get("nativeAsset"):
+            allChainAssets.add(chain["nativeAsset"].upper())
+        for token in chain.get("tokens", []):
+            if token.get("symbol"):
+                allChainAssets.add(token["symbol"].upper())
+    zeroAssets = allChainAssets - set(valueByAsset.index.str.upper())
+    if zeroAssets:
+        priceIndex = prices.set_index("Asset")["Price"]
+        zeroRows = pd.DataFrame(
+            {"Balance": 0.0, "Value": 0.0, "Price": [priceIndex.get(a) for a in sorted(zeroAssets)]},
+            index=sorted(zeroAssets),
+        )
+        zeroRows.index.name = "Asset"
+        valueByAsset = pd.concat([valueByAsset, zeroRows])
+
     valueByAsset["Fiat value"] = valueByAsset.Value.map('${:,.2f}'.format)
     valueByAsset["Total balance"] = valueByAsset.Balance.map('{:,.2f}'.format)
 
