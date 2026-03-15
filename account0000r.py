@@ -9,7 +9,7 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 import random
 import time
-from utils import _exponential_backoff, NonArchiveRpcError
+from utils import _exponential_backoff, NonArchiveRpcError, ts_to_utc
 
 
 def _to_checksum(address):
@@ -28,7 +28,8 @@ def _print_non_archive_warning(providers):
         print(border + "\n")
 from load0000rs.singleErc20 import load0000r
 
-def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block, web3):
+def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block, web3, chain_name=""):
+    prefix = f"  [{chain_name}]" if chain_name else " "
     last_block_before_timestamp = None
 
     while start_block <= end_block:
@@ -36,10 +37,9 @@ def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block,
 
         mid_block_data = _exponential_backoff(web3.eth.get_block, mid_block)
         mid_timestamp = mid_block_data["timestamp"]
-        print(f"mid timestamp of block {mid_block} is {mid_timestamp}")
 
         if mid_timestamp is None:
-            print("Error fetching block timestamp.")
+            print(f"{prefix} error fetching timestamp for block {mid_block}")
             return None
 
         if mid_timestamp <= target_timestamp:
@@ -48,27 +48,43 @@ def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block,
         else:
             end_block = mid_block - 1
 
-    print(f"last block before timestamp: {last_block_before_timestamp}")
     return last_block_before_timestamp
 
 
 def getBlockNoFromTimestamp(chains, timestamp):
-    """Returns a chain entry containing the block number that is at (or the last block before) timestamp
+    """Returns the chains list enriched with the block number closest to (but not exceeding) timestamp on each chain.
 
     Parameters
     ----------
-    chain : object
-        a chain object
+    chains : list
+        list of chain objects
     timestamp: int
-        timestamp to look for in blocks
+        Unix timestamp to look for
     """
+    print(f"Looking for block at {ts_to_utc(timestamp)} across {len(chains)} chain(s):")
     for c in range(len(chains)):
-        print(f"getting block number from timestamp {timestamp} on {chains[c]['api']}")
+        name = chains[c]['name']
+        api  = chains[c]['api']
         try:
-            web3 = Web3(Web3.HTTPProvider(chains[c]["api"]))
+            web3 = Web3(Web3.HTTPProvider(api))
             web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-            latest_block = web3.eth.block_number
-            preceding_blockNo = _find_preceding_block_by_timestamp(timestamp, 1, latest_block, web3)
+
+            first_block  = _exponential_backoff(web3.eth.get_block, 1)
+            latest_block = _exponential_backoff(web3.eth.get_block, "latest")
+
+            if timestamp < first_block.timestamp:
+                print(f"  [{name}] skipping — target {ts_to_utc(timestamp)} is before the chain's first block ({ts_to_utc(first_block.timestamp)})")
+                continue
+            if timestamp > latest_block.timestamp:
+                print(f"  [{name}] skipping — target {ts_to_utc(timestamp)} is after the latest block ({ts_to_utc(latest_block.timestamp)})")
+                continue
+
+            print(f"  [{name}] searching between block 1 ({ts_to_utc(first_block.timestamp)}) and block {latest_block.number} ({ts_to_utc(latest_block.timestamp)})...")
+            preceding_blockNo = _find_preceding_block_by_timestamp(timestamp, 1, latest_block.number, web3, chain_name=name)
+
+            result_block = _exponential_backoff(web3.eth.get_block, preceding_blockNo)
+            print(f"  [{name}] found block {preceding_blockNo} at {ts_to_utc(result_block.timestamp)}")
+
             if "metadata" not in chains[c]:
                 chains[c]["metadata"] = {}
             chains[c]["metadata"]["blockNumberByTimestamp"] = {
@@ -76,7 +92,7 @@ def getBlockNoFromTimestamp(chains, timestamp):
                 "blockNumber": preceding_blockNo
             }
         except Exception as e:
-            print(f"skipping {chains[c]['api']}: {e}")
+            print(f"  [{name}] skipping — {e}")
     return chains
 
 

@@ -16,6 +16,7 @@ Typical run order:
 """
 
 import json
+from web3 import Web3
 import account0000r
 import analyz0000r
 from load0000rs import ethBalance, metaLoad0000rErc20
@@ -24,6 +25,7 @@ from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
 from priceLoad0000rs.coingecko   import load0000r as CoinGecko
 from priceLoad0000rs.aliases     import load0000r as Aliases
 from priceLoad0000rs.manual      import load0000r as Manual
+from utils import ts_to_utc, _is_non_archive_error
 
 
 # ─── Configuration ────────────────────────────────────────────────────────────
@@ -32,7 +34,7 @@ EOY_YEAR = 2024
 
 # Input files (edit to match your setup)
 SECRETS_FILE      = "secrets.json"
-CHAINS_FILE       = "chains.json"
+CHAINS_FILE       = "data/chains.json"
 MANUAL_PRICES_FILE = "data/assetPrices-manual.csv"   # hand-maintained prices for obscure tokens
 
 # Intermediate and output files (auto-named by year; normally no need to change)
@@ -55,6 +57,68 @@ PRICE_ALIASES = {
 }
 
 # ─── Steps ────────────────────────────────────────────────────────────────────
+
+def step0_check_chains():
+    """Verify that every chain in CHAINS_FILE has a working RPC provider
+    with archive capabilities.
+
+    Checks two things for each chain:
+      1. Basic connectivity — can the RPC be reached and return the latest block?
+      2. Archive capability — can it serve historical state (required for step4)?
+
+    Prints a summary and actionable guidance for any failures.  Does not abort
+    on failure so you get a full picture of all chains in one run.
+    """
+    chains = json.load(open(CHAINS_FILE))
+    print(f"step0: checking {len(chains)} chain(s) from {CHAINS_FILE}\n")
+
+    failed_connectivity = []
+    failed_archive      = []
+
+    for chain in chains:
+        name = chain["name"]
+        api  = chain["api"]
+
+        # ── connectivity ──────────────────────────────────────────────────────
+        try:
+            w3 = Web3(Web3.HTTPProvider(api))
+            latest = w3.eth.get_block("latest")
+            print(f"  [{name}] connectivity OK — latest block {latest.number} ({ts_to_utc(latest.timestamp)})")
+        except Exception as e:
+            print(f"  [{name}] CONNECTIVITY FAILED — {e}")
+            failed_connectivity.append(name)
+            continue   # no point probing archive if the node is unreachable
+
+        # ── archive capability ────────────────────────────────────────────────
+        try:
+            w3.eth.get_balance("0x0000000000000000000000000000000000000000", 1)
+            print(f"  [{name}] archive OK")
+        except Exception as e:
+            if _is_non_archive_error(e):
+                print(f"  [{name}] NOT an archive node")
+            else:
+                print(f"  [{name}] archive check error — {e}")
+            failed_archive.append(name)
+
+    # ── summary ───────────────────────────────────────────────────────────────
+    print()
+    if not failed_connectivity and not failed_archive:
+        print(f"step0: all {len(chains)} chain(s) passed\n")
+        return
+
+    if failed_connectivity:
+        print(f"ERROR: {len(failed_connectivity)} chain(s) unreachable — step4 will not work for these:")
+        for name in failed_connectivity:
+            print(f"  - {name}")
+        print(f"  → Check the 'api' URL for these chains in {CHAINS_FILE}\n")
+
+    if failed_archive:
+        print(f"WARNING: {len(failed_archive)} chain(s) have non-archive RPC providers — step4 requires archive nodes:")
+        for name in failed_archive:
+            print(f"  - {name}")
+        print(f"  → Replace the 'api' value for these chains in {CHAINS_FILE}")
+        print(f"    with an archive endpoint (e.g. Alchemy, Infura, or a self-hosted archive node)\n")
+
 
 def step1_derive_accounts():
     """Derive HD wallet accounts from secrets.json and save to ACCOUNTS_FILE.
@@ -178,6 +242,7 @@ def step6_portfolio_analysis():
 # Each step is independent: comment out any step whose output file already
 # exists and is up to date.
 
+# step0_check_chains()        # run when setting up or changing chains.json → prints pass/fail per chain
 # step1_derive_accounts()     # run once: secrets.json → ACCOUNTS_FILE
 # step2_find_eoy_blocks()     # run once per year: chains.json → CHAINS_BLOCKS_FILE
 # step3_load_token_metadata() # run when chains.json changes → CHAINS_TOKENS_FILE

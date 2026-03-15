@@ -1,9 +1,15 @@
 import time
+from datetime import datetime, timezone
 
 
 class NonArchiveRpcError(Exception):
     """Raised when an RPC provider does not support archive/historical data."""
     pass
+
+
+def ts_to_utc(timestamp: int) -> str:
+    """Format a Unix timestamp as a human-readable UTC string."""
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
 def _is_non_archive_error(e):
