@@ -283,6 +283,9 @@ def step5_load_eoy_prices():
     """Fetch EOY closing prices for every asset that appears in ACCOUNTS_FILE
     and save them to PRICES_FILE.
 
+    If PRICES_FILE already exists, cached prices are kept and only missing
+    symbols are fetched.  To force a full re-fetch, delete PRICES_FILE first.
+
     Loader priority: CryptoCompare → CoinGecko → Aliases → Manual CSV.
     Add any assets that APIs cannot find to MANUAL_PRICES_FILE as Asset,Price
     rows and re-run this step.
@@ -293,18 +296,40 @@ def step5_load_eoy_prices():
     chains   = json.load(open(CHAINS_TOKENS_FILE))
 
     symbols = collectSymbols(accounts, chains)
-    print(f"step5: pricing {len(symbols)} symbols: {symbols}")
 
-    loaders = [
-        CryptoCompare(),
-        CoinGecko(),
-        Aliases(PRICE_ALIASES),
-        Manual(MANUAL_PRICES_FILE),
-    ]
+    # merge cached prices from a previous run
+    cached_prices: dict[str, float] = {}
+    if os.path.exists(PRICES_FILE):
+        import csv as _csv
+        with open(PRICES_FILE, newline="") as f:
+            reader = _csv.DictReader(f, skipinitialspace=True)
+            for row in reader:
+                row = {k.strip(): v.strip() for k, v in row.items()}
+                sym = row.get("Asset", "").upper()
+                raw = row.get("Price", "")
+                if sym and raw:
+                    try:
+                        cached_prices[sym] = float(raw)
+                    except ValueError:
+                        pass
 
-    prices = loadAssetPrices(symbols, eoyTimestamp(EOY_YEAR), loaders)
-    exportPrices(prices, PRICES_FILE)
-    print(f"step5: {len(prices)}/{len(symbols)} prices written to {PRICES_FILE}")
+    missing = [s for s in symbols if s not in cached_prices]
+
+    if missing:
+        print(f"step5: {len(symbols)} symbols total, {len(cached_prices)} cached, {len(missing)} to fetch: {missing}")
+        loaders = [
+            CryptoCompare(),
+            CoinGecko(),
+            Aliases(PRICE_ALIASES),
+            Manual(MANUAL_PRICES_FILE),
+        ]
+        new_prices = loadAssetPrices(missing, eoyTimestamp(EOY_YEAR), loaders)
+        cached_prices.update(new_prices)
+    else:
+        print(f"step5: all {len(symbols)} symbols already cached in {PRICES_FILE}")
+
+    exportPrices(cached_prices, PRICES_FILE)
+    print(f"step5: {len(cached_prices)} prices written to {PRICES_FILE}")
 
 
 def step6_portfolio_analysis():
