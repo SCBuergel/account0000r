@@ -14,9 +14,10 @@ Steps (run in the order listed):
     step6  — print portfolio analysis
 
 Examples:
-    python accounting.py 2024 step1 step2 step3 step4 step5 step6
-    python accounting.py 2024 step5 step6          # re-run prices + analysis only
-    python accounting.py 2024 step0                 # just check RPC health
+    python accounting.py 2024 1-6          # full pipeline
+    python accounting.py 2024 5,6          # re-run prices + analysis only
+    python accounting.py 2024 0            # just check RPC health
+    python accounting.py 2024 1-3,5        # steps 1, 2, 3 and 5
 """
 
 import argparse
@@ -311,22 +312,50 @@ STEPS = {
 }
 
 
+STEP_IDS = sorted(STEPS.keys())                    # ["step0", "step1", ...]
+MAX_STEP = len(STEP_IDS) - 1
+
+
+def _parse_steps(raw: str) -> list[str]:
+    """Parse a step specifier like "0-3,5" into ["step0","step1","step2","step3","step5"].
+
+    Accepted tokens (comma-separated, spaces are ignored):
+        3       → step3
+        1-4     → step1, step2, step3, step4
+    """
+    nums = set()
+    for token in raw.replace(" ", "").split(","):
+        if not token:
+            continue
+        if "-" in token:
+            lo, hi = token.split("-", 1)
+            lo, hi = int(lo), int(hi)
+        else:
+            lo = hi = int(token)
+        if lo > hi or lo < 0 or hi > MAX_STEP:
+            print(f"ERROR: invalid step range '{token}' — valid steps are 0..{MAX_STEP}")
+            sys.exit(1)
+        nums.update(range(lo, hi + 1))
+    return [f"step{n}" for n in sorted(nums)]
+
+
 def main():
-    step_list = "\n".join(f"  {k}  — {desc}" for k, (desc, _) in STEPS.items())
+    step_list = "\n".join(f"  {n}  — {desc}" for n, (desc, _) in STEPS.items())
 
     parser = argparse.ArgumentParser(
         description="Step-by-step EOY portfolio accounting.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"available steps:\n{step_list}\n\nexamples:\n"
-               f"  python accounting.py 2024 step1 step2 step3 step4 step5 step6\n"
-               f"  python accounting.py 2024 step5 step6\n"
-               f"  python accounting.py 2024 step0",
+               f"  python accounting.py 2024 1-6        # full pipeline\n"
+               f"  python accounting.py 2024 5,6        # re-run prices + analysis\n"
+               f"  python accounting.py 2024 0          # just check RPC health\n"
+               f"  python accounting.py 2024 1-3,5      # steps 1, 2, 3 and 5",
     )
     parser.add_argument("year", type=int, nargs="?", default=None,
                         help="EOY year to process (e.g. 2024)")
     parser.add_argument(
-        "steps", nargs="*", metavar="step",
-        help="one or more steps to run: " + ", ".join(STEPS.keys()),
+        "steps", nargs="?", default=None, metavar="steps",
+        help="steps to run, e.g. 0-6, 1,3,5, or 4-6  (valid: 0..{})".format(MAX_STEP),
     )
 
     args = parser.parse_args()
@@ -337,15 +366,16 @@ def main():
 
     if not args.steps:
         parser.print_help()
-        print(f"\nERROR: no steps specified. Provide one or more steps to run.")
-        print(f"  e.g.  python accounting.py {args.year} step1 step2 step3")
+        print(f"\nERROR: no steps specified.")
+        print(f"  e.g.  python accounting.py {args.year} 1-6")
         sys.exit(1)
 
-    invalid = [s for s in args.steps if s not in STEPS]
-    if invalid:
+    try:
+        step_names = _parse_steps(args.steps)
+    except ValueError:
         parser.print_help()
-        print(f"\nERROR: unknown step(s): {', '.join(invalid)}")
-        print(f"  valid steps: {', '.join(STEPS.keys())}")
+        print(f"\nERROR: could not parse step specifier '{args.steps}'.")
+        print(f"  Use comma-separated numbers or ranges, e.g. 0-3,5")
         sys.exit(1)
 
     _init_paths(args.year)
@@ -354,14 +384,14 @@ def main():
     global EOY_YEAR
     EOY_YEAR = args.year
 
-    for step_name in args.steps:
+    for step_name in step_names:
         desc, fn = STEPS[step_name]
         print(f"\n{'─' * 60}")
         print(f"  {step_name}: {desc}  (year={args.year})")
         print(f"{'─' * 60}\n")
         fn()
 
-    print(f"\nDone — ran {len(args.steps)} step(s).")
+    print(f"\nDone — ran {len(step_names)} step(s).")
 
 
 if __name__ == "__main__":
