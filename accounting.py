@@ -312,18 +312,42 @@ STEPS = {
 
 
 def main():
+    step_list = "\n".join(f"  {k}  — {desc}" for k, (desc, _) in STEPS.items())
+
     parser = argparse.ArgumentParser(
         description="Step-by-step EOY portfolio accounting.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="\n".join(f"  {k}  — {desc}" for k, (desc, _) in STEPS.items()),
+        epilog=f"available steps:\n{step_list}\n\nexamples:\n"
+               f"  python accounting.py 2024 step1 step2 step3 step4 step5 step6\n"
+               f"  python accounting.py 2024 step5 step6\n"
+               f"  python accounting.py 2024 step0",
     )
-    parser.add_argument("year", type=int, help="EOY year to process (e.g. 2024)")
+    parser.add_argument("year", type=int, nargs="?", default=None,
+                        help="EOY year to process (e.g. 2024)")
     parser.add_argument(
-        "steps", nargs="+", choices=list(STEPS.keys()), metavar="step",
+        "steps", nargs="*", metavar="step",
         help="one or more steps to run: " + ", ".join(STEPS.keys()),
     )
 
     args = parser.parse_args()
+
+    if args.year is None:
+        parser.print_help()
+        sys.exit(1)
+
+    if not args.steps:
+        parser.print_help()
+        print(f"\nERROR: no steps specified. Provide one or more steps to run.")
+        print(f"  e.g.  python accounting.py {args.year} step1 step2 step3")
+        sys.exit(1)
+
+    invalid = [s for s in args.steps if s not in STEPS]
+    if invalid:
+        parser.print_help()
+        print(f"\nERROR: unknown step(s): {', '.join(invalid)}")
+        print(f"  valid steps: {', '.join(STEPS.keys())}")
+        sys.exit(1)
+
     _init_paths(args.year)
 
     # make EOY_YEAR available to step functions that reference it via eoyTimestamp()
