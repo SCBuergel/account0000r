@@ -43,15 +43,30 @@ class load0000r(basePriceLoad0000r):
             print(f"[manual] price file not found: {self._csv_path} — no manual prices available")
             return
         with open(self._csv_path, newline="") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                asset = row.get("Asset", "").strip().upper()
-                raw_price = row.get("Price", "").strip()
-                if asset and raw_price:
-                    try:
-                        self._prices[asset] = float(raw_price)
-                    except ValueError:
-                        print(f"[manual] skipping non-numeric price for {asset}: {raw_price!r}")
+            reader = csv.DictReader(f, skipinitialspace=True)
+            # normalise header names (strip whitespace, lowercase for matching)
+            if reader.fieldnames is None:
+                print(f"[manual] ERROR: {self._csv_path} is empty")
+                return
+            headers = [h.strip() for h in reader.fieldnames]
+            if "Asset" not in headers or "Price" not in headers:
+                print(f"[manual] ERROR: {self._csv_path} must have 'Asset' and 'Price' columns, found: {headers}")
+                return
+            for lineno, row in enumerate(reader, start=2):
+                row = {k.strip(): (v.strip() if v else "") for k, v in row.items()}
+                asset = row.get("Asset", "").upper()
+                raw_price = row.get("Price", "")
+                if not asset:
+                    print(f"[manual] WARNING: {self._csv_path}:{lineno} — missing asset name, skipping")
+                    continue
+                if not raw_price:
+                    print(f"[manual] WARNING: {self._csv_path}:{lineno} — missing price for {asset}, skipping")
+                    continue
+                try:
+                    self._prices[asset] = float(raw_price)
+                except ValueError:
+                    print(f"[manual] WARNING: {self._csv_path}:{lineno} — non-numeric price for {asset}: {raw_price!r}, skipping")
+        print(f"[manual] loaded {len(self._prices)} price(s) from {self._csv_path}: {sorted(self._prices.keys())}")
 
     def fetchPrice(self, symbol: str, timestamp: int) -> float | None:
         # timestamp is ignored — the CSV is assumed to already be for the right date
