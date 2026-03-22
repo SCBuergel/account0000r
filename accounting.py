@@ -2,7 +2,7 @@
 accounting.py — step-by-step EOY portfolio accounting
 
 Usage:
-    python accounting.py <year> <step> [<step> ...]
+    python accounting.py <year> <steps> [--profile <name>]
 
 Steps (run in the order listed):
     step0  — check chain RPC connectivity and archive support
@@ -14,10 +14,10 @@ Steps (run in the order listed):
     step6  — print portfolio analysis
 
 Examples:
-    python accounting.py 2024 1-6          # full pipeline
-    python accounting.py 2024 5,6          # re-run prices + analysis only
-    python accounting.py 2024 0            # just check RPC health
-    python accounting.py 2024 1-3,5        # steps 1, 2, 3 and 5
+    python accounting.py 2024 1-6                    # full pipeline
+    python accounting.py 2024 5,6                    # re-run prices + analysis only
+    python accounting.py 2024 0                      # just check RPC health
+    python accounting.py 2024 6 --profile corporate  # analyse corporate accounts only
 """
 
 import argparse
@@ -76,12 +76,25 @@ PRICE_ALIASES = {
 }
 
 
+PROFILE = "personal"   # set via --profile CLI arg
+
+
 def _require_file(path, producing_step):
     """Exit with a helpful message if a required file is missing."""
     if not os.path.exists(path):
         print(f"ERROR: required file not found: {path}")
         print(f"  → Run {producing_step} first to generate it.")
         sys.exit(1)
+
+
+def _filter_by_profile(accounts):
+    """Return accounts that match PROFILE or have no profile set."""
+    filtered = [a for a in accounts if a.get("profile", PROFILE) == PROFILE]
+    total = len(accounts)
+    kept  = len(filtered)
+    if kept < total:
+        print(f"  profile={PROFILE}: selected {kept}/{total} accounts (skipped {total - kept})")
+    return filtered
 
 
 # ─── Steps ────────────────────────────────────────────────────────────────────
@@ -289,7 +302,7 @@ def step6_portfolio_analysis():
     _require_file(ACCOUNTS_FILE, "step4 (loads EOY balances)")
     _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
     _require_file(PRICES_FILE, "step5 (fetches EOY prices)")
-    accounts = json.load(open(ACCOUNTS_FILE))
+    accounts = _filter_by_profile(json.load(open(ACCOUNTS_FILE)))
     chains   = json.load(open(CHAINS_TOKENS_FILE))
 
     analyz0000r.portfolioValue(
@@ -357,6 +370,10 @@ def main():
         "steps", nargs="?", default=None, metavar="steps",
         help="steps to run, e.g. 0-6, 1,3,5, or 4-6  (valid: 0..{})".format(MAX_STEP),
     )
+    parser.add_argument(
+        "--profile", default="personal",
+        help="only include accounts matching this profile in analysis (default: personal)",
+    )
 
     args = parser.parse_args()
 
@@ -380,9 +397,9 @@ def main():
 
     _init_paths(args.year)
 
-    # make EOY_YEAR available to step functions that reference it via eoyTimestamp()
-    global EOY_YEAR
+    global EOY_YEAR, PROFILE
     EOY_YEAR = args.year
+    PROFILE  = args.profile
 
     for step_name in step_names:
         desc, fn = STEPS[step_name]

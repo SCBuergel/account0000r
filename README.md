@@ -114,11 +114,25 @@ A list of accounts can be created via `account0000r.accountsFromSecrets` or (e.g
   {
     "address": "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6",
     "index": 1,
-    "mnemonic": "Vitalik"
+    "mnemonic": "Vitalik",
+    "profile": "corporate"
   }
 ]
 ```
 The `mnemonic` and `index` field allows `analyz0000r`s to group the output of accounts for getting a better overview when handling a large number of addresses which are derived from various mnemonics.
+
+### Profiles
+
+Each account can optionally have a `"profile"` field (e.g. `"personal"`, `"corporate"`, `"contractor XYZ"`). This lets you separate accounts into groups and run analysis for a specific subset.
+
+Balances and prices are always loaded for **all** accounts (steps 1–5). The profile filter is applied during analysis (step 6). Accounts **without** a `"profile"` field are included in every profile.
+
+```bash
+python accounting.py 2024 6                      # analyses "personal" profile (default)
+python accounting.py 2024 6 --profile corporate   # analyses "corporate" accounts only
+python accounting.py 2024 6 --profile all          # not supported — omit "profile" from
+                                                   #   accounts to include them everywhere
+```
 
 After running any of the `load0000r`s, the new file 
 (all files are appended with a date, so you don't have to worry about files getting overwritten)
