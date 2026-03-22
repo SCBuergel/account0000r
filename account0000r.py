@@ -117,17 +117,34 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=F
     """
     load0000rs = []
 
+    total = sum(len(chains[c].get("tokens", [])) for c in range(len(chains)))
+    done  = 0
+    start_time = time.time()
+
     for c in range(len(chains)):
         if "tokens" in chains[c]:
             for t in range(len(chains[c]["tokens"])):
-                print(f"loading token: {chains[c]['tokens'][t]}")
-                newLoad0000r = load0000r(True, chains[c], chains[c]["tokens"][t], metaLoad0000r, atBlock)
+                token     = chains[c]["tokens"][t]
+                chain_name = chains[c]["name"]
+                symbol    = token.get("symbol", token.get("address", "?"))
+                newLoad0000r = load0000r(True, chains[c], token, metaLoad0000r, atBlock)
                 try:
                     if loadChainData:
+                        time_now = time.time()
+                        elapsed  = time_now - start_time
+                        if done > 0:
+                            eta = elapsed / done * (total - done)
+                            print(f"  [{chain_name}] loading token metadata: {symbol} ({done + 1}/{total}, {elapsed:.0f}s elapsed, ~{eta:.0f}s remaining)")
+                        else:
+                            print(f"  [{chain_name}] loading token metadata: {symbol} ({done + 1}/{total})")
                         chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
                     load0000rs.append(newLoad0000r)
                 except Exception as e:
-                    print(f"skipping {chains[c]['tokens'][t]} on {chains[c]['api']}: {e}")
+                    print(f"  [{chain_name}] skipping {symbol}: {e}")
+                done += 1
+
+    if loadChainData:
+        print(f"token metadata: {done} token(s) processed in {time.time() - start_time:.0f}s")
     random.shuffle(load0000rs)
     return load0000rs, chains
 
