@@ -97,6 +97,31 @@ def _filter_by_profile(accounts):
     return filtered
 
 
+def _sync_profiles(accounts):
+    """Update profile fields in accounts from ACCOUNTS_BLANK_FILE (source of truth).
+
+    Balances and other chain data are left untouched — only the profile
+    metadata is refreshed.  Returns the number of accounts that changed.
+    """
+    _require_file(ACCOUNTS_BLANK_FILE, "step1 (derives accounts)")
+    blank = json.load(open(ACCOUNTS_BLANK_FILE))
+    profiles_by_addr = {a["address"].lower(): a.get("profile") for a in blank}
+
+    updated = 0
+    for account in accounts:
+        addr = account["address"].lower()
+        new_profile = profiles_by_addr.get(addr)
+        old_profile = account.get("profile")
+        if new_profile != old_profile:
+            if new_profile is None:
+                account.pop("profile", None)
+            else:
+                account["profile"] = new_profile
+            updated += 1
+            print(f"  [{account['address']}] profile: {old_profile!r} → {new_profile!r}")
+    return updated
+
+
 # ─── Steps ────────────────────────────────────────────────────────────────────
 
 def _check_single_chain(chain):
@@ -249,6 +274,11 @@ def step4_load_eoy_balances():
     _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
     print(f"step4: loading accounts from {source}")
     accounts  = json.load(open(source))
+
+    n = _sync_profiles(accounts)
+    if n:
+        print(f"step4: updated {n} profile(s) from {ACCOUNTS_BLANK_FILE}")
+
     chains    = json.load(open(CHAINS_TOKENS_FILE))
     metaErc20 = metaLoad0000rErc20.load0000r()
 
@@ -302,7 +332,12 @@ def step6_portfolio_analysis():
     _require_file(ACCOUNTS_FILE, "step4 (loads EOY balances)")
     _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
     _require_file(PRICES_FILE, "step5 (fetches EOY prices)")
-    accounts = _filter_by_profile(json.load(open(ACCOUNTS_FILE)))
+    all_accounts = json.load(open(ACCOUNTS_FILE))
+
+    profiles = sorted({a.get("profile", "(none)") for a in all_accounts})
+    print(f"step6: profiles in {ACCOUNTS_FILE}: {', '.join(profiles)}")
+
+    accounts = _filter_by_profile(all_accounts)
     chains   = json.load(open(CHAINS_TOKENS_FILE))
 
     analyz0000r.portfolioValue(
