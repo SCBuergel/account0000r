@@ -4,8 +4,9 @@ from load0000rs.base import baseLoad0000r
 from utils import _exponential_backoff
 
 class load0000r(baseLoad0000r):
-    def __init__(self, atBlock=False):
+    def __init__(self, atBlock=False, skipAnalysisIfEntryExists=False):
         self.__atBlock = atBlock
+        self._shouldSkipAnalysisIfEntryExists = skipAnalysisIfEntryExists
 
     def name(self):
         if self.__atBlock:

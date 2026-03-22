@@ -286,7 +286,7 @@ def step4_load_eoy_balances():
         chains, metaErc20, loadChainData=False, atBlock=True
     )
 
-    loaders = [ethBalance.load0000r(atBlock=True), *erc20Loaders]
+    loaders = [ethBalance.load0000r(atBlock=True, skipAnalysisIfEntryExists=True), *erc20Loaders]
     accounts, errors = account0000r.loadAccountMetadata(loaders, accounts, chains)
 
     account0000r.writeJson(accounts, ACCOUNTS_FILE)
