@@ -21,9 +21,9 @@ class load0000r(basePriceLoad0000r):
             "WXHOPR":  "HOPR",
             "STKAAVE": "AAVE",
             "WETH":    "ETH",
-            "RETH":    "ETH",
             "STETH":   "ETH",
             "WBTC":    "BTC",
+            "USDC.E":  "USDC",
         })
     """
 

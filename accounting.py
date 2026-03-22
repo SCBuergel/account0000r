@@ -1,21 +1,28 @@
 """
 accounting.py — step-by-step EOY portfolio accounting
 
-Each step is a self-contained function that reads its inputs from the files
-written by the previous step and saves its outputs to new files.  Run the
-full workflow top-to-bottom the first time, then re-run only the steps that
-need to change (e.g. re-fetch prices without reloading all balances).
+Usage:
+    python accounting.py <year> <step> [<step> ...]
 
-Typical run order:
-    1. step1_derive_accounts        — once per set of mnemonics
-    2. step2_find_eoy_blocks        — once per year
-    3. step3_load_token_metadata    — once per chains.json change
-    4. step4_load_eoy_balances      — once per year (slow, hits RPCs)
-    5. step5_load_eoy_prices        — once per year (or re-run to refresh)
-    6. step6_portfolio_analysis     — run as often as you like
+Steps (run in the order listed):
+    step0  — check chain RPC connectivity and archive support
+    step1  — derive HD wallet accounts from secrets.json
+    step2  — find EOY block numbers for every chain
+    step3  — load on-chain token metadata (decimals, symbols)
+    step4  — load EOY balances for every account (slow, hits RPCs)
+    step5  — fetch EOY asset prices
+    step6  — print portfolio analysis
+
+Examples:
+    python accounting.py 2024 step1 step2 step3 step4 step5 step6
+    python accounting.py 2024 step5 step6          # re-run prices + analysis only
+    python accounting.py 2024 step0                 # just check RPC health
 """
 
+import argparse
 import json
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from web3 import Web3
 import account0000r
@@ -31,19 +38,28 @@ from utils import ts_to_utc, _is_non_archive_error
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-EOY_YEAR = 2024
-
 # Input files (edit to match your setup)
-SECRETS_FILE      = "secrets.json"
-CHAINS_FILE       = "data/chains.json"
+SECRETS_FILE       = "secrets.json"
+CHAINS_FILE        = "data/chains.json"
 MANUAL_PRICES_FILE = "data/assetPrices-manual.csv"   # hand-maintained prices for obscure tokens
 
-# Intermediate and output files (auto-named by year; normally no need to change)
-ACCOUNTS_BLANK_FILE = "data/accounts-blank.json"                # plain addresses, no balance data (step1 output)
-CHAINS_BLOCKS_FILE  = f"data/chains-{EOY_YEAR}-blocks.json"    # chains + EOY block numbers
-CHAINS_TOKENS_FILE  = f"data/chains-{EOY_YEAR}-tokens.json"    # chains + token metadata
-ACCOUNTS_FILE       = f"data/accounts-{EOY_YEAR}.json"         # accounts + all balances
-PRICES_FILE         = f"data/assetPrices-{EOY_YEAR}.csv"       # EOY USD prices
+# Intermediate and output files (auto-named by year; set in _init_paths)
+ACCOUNTS_BLANK_FILE = None
+CHAINS_BLOCKS_FILE  = None
+CHAINS_TOKENS_FILE  = None
+ACCOUNTS_FILE       = None
+PRICES_FILE         = None
+
+
+def _init_paths(year):
+    global ACCOUNTS_BLANK_FILE, CHAINS_BLOCKS_FILE, CHAINS_TOKENS_FILE
+    global ACCOUNTS_FILE, PRICES_FILE
+    ACCOUNTS_BLANK_FILE = "data/accounts-blank.json"
+    CHAINS_BLOCKS_FILE  = f"data/chains-{year}-blocks.json"
+    CHAINS_TOKENS_FILE  = f"data/chains-{year}-tokens.json"
+    ACCOUNTS_FILE       = f"data/accounts-{year}.json"
+    PRICES_FILE         = f"data/assetPrices-{year}.csv"
+
 
 # Derived tokens that share the price of their underlying asset.
 # Add any project-specific mappings here.
@@ -51,12 +67,21 @@ PRICE_ALIASES = {
     "XHOPR":   "HOPR",
     "WXHOPR":  "HOPR",
     "STKAAVE": "AAVE",
-    "RETH":    "ETH",
     "STETH":   "ETH",
     "WETH":    "ETH",
     "WBTC":    "BTC",
     "XDAI":    "DAI",
+    "USDC.E":  "USDC",
 }
+
+
+def _require_file(path, producing_step):
+    """Exit with a helpful message if a required file is missing."""
+    if not os.path.exists(path):
+        print(f"ERROR: required file not found: {path}")
+        print(f"  → Run {producing_step} first to generate it.")
+        sys.exit(1)
+
 
 # ─── Steps ────────────────────────────────────────────────────────────────────
 
@@ -98,6 +123,7 @@ def step0_check_chains():
       1. Basic connectivity — can the RPC be reached and return the latest block?
       2. Archive capability — can it serve historical state (required for step4)?
     """
+    _require_file(CHAINS_FILE, "step0 requires chains.json — create it from data/chains-sample.json")
     chains = json.load(open(CHAINS_FILE))
     print(f"step0: checking {len(chains)} chain(s) from {CHAINS_FILE}")
 
@@ -150,6 +176,7 @@ def step1_derive_accounts():
     step and write a JSON list directly to ACCOUNTS_BLANK_FILE instead
     (see README for the required format).
     """
+    _require_file(SECRETS_FILE, "step1 requires secrets.json — create it from EXAMPLE-secrets.json")
     secrets  = json.load(open(SECRETS_FILE))
     accounts = account0000r.accountsFromSecrets(secrets)
 
@@ -164,6 +191,7 @@ def step2_find_eoy_blocks():
     writes the results to CHAINS_BLOCKS_FILE.  Only needs to run once per year.
     The resulting file is the input for step3 and step4.
     """
+    _require_file(CHAINS_FILE, "step2 requires chains.json — create it from data/chains-sample.json")
     chains    = json.load(open(CHAINS_FILE))
     timestamp = eoyTimestamp(EOY_YEAR)
 
@@ -181,6 +209,7 @@ def step3_load_token_metadata():
     the saved CHAINS_TOKENS_FILE already contains the metadata so you can pass
     loadChainData=False to generateTokenLoad0000rs to skip the RPC calls.
     """
+    _require_file(CHAINS_BLOCKS_FILE, "step2 (finds EOY block numbers)")
     chains   = json.load(open(CHAINS_BLOCKS_FILE))
     metaErc20 = metaLoad0000rErc20.load0000r()
 
@@ -201,8 +230,9 @@ def step4_load_eoy_balances():
     are filled in.  To force a full re-fetch, delete ACCOUNTS_FILE first and
     re-run — it will restart from the blank accounts in ACCOUNTS_BLANK_FILE.
     """
-    import os
     source = ACCOUNTS_FILE if os.path.exists(ACCOUNTS_FILE) else ACCOUNTS_BLANK_FILE
+    _require_file(source, "step1 (derives accounts)" if source == ACCOUNTS_BLANK_FILE else "step4 (previous run)")
+    _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
     print(f"step4: loading accounts from {source}")
     accounts  = json.load(open(source))
     chains    = json.load(open(CHAINS_TOKENS_FILE))
@@ -229,6 +259,8 @@ def step5_load_eoy_prices():
     Add any assets that APIs cannot find to MANUAL_PRICES_FILE as Asset,Price
     rows and re-run this step.
     """
+    _require_file(ACCOUNTS_FILE, "step4 (loads EOY balances)")
+    _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
     accounts = json.load(open(ACCOUNTS_FILE))
     chains   = json.load(open(CHAINS_TOKENS_FILE))
 
@@ -253,6 +285,9 @@ def step6_portfolio_analysis():
     Reads balances from ACCOUNTS_FILE and prices from PRICES_FILE.
     Safe to re-run at any time without touching RPC endpoints or price APIs.
     """
+    _require_file(ACCOUNTS_FILE, "step4 (loads EOY balances)")
+    _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
+    _require_file(PRICES_FILE, "step5 (fetches EOY prices)")
     accounts = json.load(open(ACCOUNTS_FILE))
     chains   = json.load(open(CHAINS_TOKENS_FILE))
 
@@ -263,15 +298,47 @@ def step6_portfolio_analysis():
     )
 
 
-# ─── Runner ───────────────────────────────────────────────────────────────────
-# Uncomment the steps you want to run.
-# Each step is independent: comment out any step whose output file already
-# exists and is up to date.
+# ─── CLI ──────────────────────────────────────────────────────────────────────
 
-# step0_check_chains()        # run when setting up or changing chains.json → prints pass/fail per chain
-# step1_derive_accounts()     # run once: secrets.json → ACCOUNTS_BLANK_FILE
-# step2_find_eoy_blocks()     # run once per year: chains.json → CHAINS_BLOCKS_FILE
-# step3_load_token_metadata() # run when chains.json changes → CHAINS_TOKENS_FILE
-# step4_load_eoy_balances()   # run once per year (slow) → ACCOUNTS_FILE
-# step5_load_eoy_prices()     # run to refresh prices → PRICES_FILE
-# step6_portfolio_analysis()  # run anytime → prints to console + data/*.csv
+STEPS = {
+    "step0": ("check chain RPCs",            step0_check_chains),
+    "step1": ("derive accounts",             step1_derive_accounts),
+    "step2": ("find EOY block numbers",      step2_find_eoy_blocks),
+    "step3": ("load token metadata",         step3_load_token_metadata),
+    "step4": ("load EOY balances (slow)",    step4_load_eoy_balances),
+    "step5": ("fetch EOY prices",            step5_load_eoy_prices),
+    "step6": ("portfolio analysis",          step6_portfolio_analysis),
+}
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Step-by-step EOY portfolio accounting.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="\n".join(f"  {k}  — {desc}" for k, (desc, _) in STEPS.items()),
+    )
+    parser.add_argument("year", type=int, help="EOY year to process (e.g. 2024)")
+    parser.add_argument(
+        "steps", nargs="+", choices=list(STEPS.keys()), metavar="step",
+        help="one or more steps to run: " + ", ".join(STEPS.keys()),
+    )
+
+    args = parser.parse_args()
+    _init_paths(args.year)
+
+    # make EOY_YEAR available to step functions that reference it via eoyTimestamp()
+    global EOY_YEAR
+    EOY_YEAR = args.year
+
+    for step_name in args.steps:
+        desc, fn = STEPS[step_name]
+        print(f"\n{'─' * 60}")
+        print(f"  {step_name}: {desc}  (year={args.year})")
+        print(f"{'─' * 60}\n")
+        fn()
+
+    print(f"\nDone — ran {len(args.steps)} step(s).")
+
+
+if __name__ == "__main__":
+    main()

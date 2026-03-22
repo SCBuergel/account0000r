@@ -98,7 +98,7 @@ TODO
 #priceLoaders = [
 #    CryptoCompare(),
 #    CoinGecko(),
-#    Aliases({"XHOPR": "HOPR", "WXHOPR": "HOPR", "STKAAVE": "AAVE", "RETH": "ETH", "STETH": "ETH", "WETH": "ETH"}),
+#    Aliases({"XHOPR": "HOPR", "WXHOPR": "HOPR", "STKAAVE": "AAVE", "STETH": "ETH", "WETH": "ETH", "USDC.E": "USDC"}),
 #    Manual("data/assetPrices-manual.csv"),
 #]
 #prices = loadAssetPrices(symbols, eoyTimestamp(2024), priceLoaders)

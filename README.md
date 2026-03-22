@@ -243,7 +243,7 @@ It mirrors the `load0000rs` pattern: a base class defines the interface, concret
 |--------|--------|-------|
 | `cryptocompare.CryptoCompare` | [CryptoCompare histoday API](https://min-api.cryptocompare.com) | No API key needed. Primary source for most assets. Returns the daily close at the given timestamp. |
 | `coingecko.CoinGecko` | [CoinGecko history API](https://www.coingecko.com/en/api) | No API key for public tier. Fetches the full coin list once to resolve symbol→id mapping. Pass `symbol_overrides={"WETH": "weth"}` to resolve ambiguous tickers. |
-| `aliases.Aliases` | Derived/wrapped tokens | Maps tokens to their underlying asset (e.g. `xHOPR → HOPR`, `stkAAVE → AAVE`, `rETH → ETH`). Must be placed **after** the loaders that resolve the underlyings. |
+| `aliases.Aliases` | Derived/wrapped tokens | Maps tokens to their underlying asset (e.g. `xHOPR → HOPR`, `stkAAVE → AAVE`, `USDC.E → USDC`). Must be placed **after** the loaders that resolve the underlyings. |
 | `manual.Manual` | Local CSV file | Reads the same `Asset,Price` CSV format that `portfolioValue()` consumes. Use for illiquid or obscure tokens (SAI, STAKE, FOAM, …) that APIs no longer cover. Silent no-op if the file is absent. |
 
 ### Example
@@ -259,7 +259,7 @@ from priceLoad0000rs.manual import load0000r as Manual
 loaders = [
     CryptoCompare(),
     CoinGecko(),
-    Aliases({"XHOPR": "HOPR", "WXHOPR": "HOPR", "STKAAVE": "AAVE", "RETH": "ETH", "STETH": "ETH", "WETH": "ETH"}),
+    Aliases({"XHOPR": "HOPR", "WXHOPR": "HOPR", "STKAAVE": "AAVE", "STETH": "ETH", "WETH": "ETH", "USDC.E": "USDC"}),
     Manual("data/assetPrices-manual.csv"),
 ]
 symbols = collectSymbols(accounts, chains)   # e.g. ["ETH", "GNO", "USDC", "xDAI"]
