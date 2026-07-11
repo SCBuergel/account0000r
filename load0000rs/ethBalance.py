@@ -1,7 +1,7 @@
 import json
-from web3 import Web3
 from load0000rs.base import baseLoad0000r
 from utils import _exponential_backoff
+from rpc import build_web3
 
 class load0000r(baseLoad0000r):
     def __init__(self, atBlock=False, skipAnalysisIfEntryExists=False):
@@ -23,7 +23,7 @@ class load0000r(baseLoad0000r):
         else:
             targetBlockNumber = "latest"
             
-        web3 = Web3(Web3.HTTPProvider(chain["api"]))
+        web3 = build_web3(chain)
         balance = _exponential_backoff(web3.eth.get_balance, account, targetBlockNumber)/1e18
         newEntry = self.createEmptyAccountEntry()
         newEntry["nativeBalance"] = balance

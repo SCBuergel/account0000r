@@ -1,6 +1,5 @@
-from web3 import Web3
 from load0000rs.base import baseLoad0000r
-from web3.middleware import geth_poa_middleware
+from rpc import build_web3
 
 class blockNumberByTimestamp(baseLoad0000r):
     timestamp = 0
@@ -15,8 +14,7 @@ class blockNumberByTimestamp(baseLoad0000r):
         return "0.0.1"
 
     def analyze(self, chain, accounts):
-        web3 = Web3(Web3.HTTPProvider(chain["api"]))
-        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        web3 = build_web3(chain)
         smallerBlock = web3.eth.get_block(1, False)
         biggerBlock = web3.eth.get_block("latest", False)
         print(f"Looking for timestamp {self.timestamp} on {chain['name']}")

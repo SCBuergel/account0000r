@@ -42,14 +42,14 @@ def check_archive(chains, chain_name):
     chain_name : str
         Value of the "name" field identifying the chain to test.
     """
-    from web3 import Web3
+    from rpc import build_web3
 
     chain = next((c for c in chains if c["name"] == chain_name), None)
     if chain is None:
         print(f"check_archive: chain '{chain_name}' not found in chains list")
         return False
 
-    w3 = Web3(Web3.HTTPProvider(chain["api"]))
+    w3 = build_web3(chain)
     try:
         w3.eth.get_balance("0x0000000000000000000000000000000000000000", 1)
         print(f"[archive] {chain_name} ({chain['api']}): archive node ✓")

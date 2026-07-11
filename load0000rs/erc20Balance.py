@@ -1,7 +1,7 @@
 import json
-from web3 import Web3
 from load0000rs.base import baseLoad0000r
 from utils import _exponential_backoff
+from rpc import build_web3
 
 class load0000r(baseLoad0000r):
     def __init__(self, skipAnalysisIfEntryExists):
@@ -15,7 +15,7 @@ class load0000r(baseLoad0000r):
 
     def analyze(self, account, chain):
         targetBlockNumber = "latest"
-        web3 = Web3(Web3.HTTPProvider(chain["api"]))
+        web3 = build_web3(chain)
         erc20BalanceABI = """[
         {"inputs":[{"internalType":"address","name":"tokenHolder","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
         {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"pure","type":"function"},

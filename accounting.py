@@ -25,7 +25,6 @@ import json
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from web3 import Web3
 import account0000r
 import analyz0000r
 from load0000rs import ethBalance, metaLoad0000rErc20
@@ -35,6 +34,7 @@ from priceLoad0000rs.coingecko   import load0000r as CoinGecko
 from priceLoad0000rs.aliases     import load0000r as Aliases
 from priceLoad0000rs.manual      import load0000r as Manual
 from utils import ts_to_utc, _is_non_archive_error
+from rpc import build_web3
 
 
 # ─── Configuration ────────────────────────────────────────────────────────────
@@ -105,10 +105,9 @@ def _check_single_chain(chain):
     Runs in a thread — must not print directly.
     """
     name = chain["name"]
-    api  = chain["api"]
 
     try:
-        w3     = Web3(Web3.HTTPProvider(api))
+        w3     = build_web3(chain)
         latest = w3.eth.get_block("latest")
     except Exception as e:
         return False, False, f"CONNECTIVITY FAILED — {e}"

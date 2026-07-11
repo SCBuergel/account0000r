@@ -1,7 +1,11 @@
 [
   {
     "name": "Ethereum Main Net",
-    "api": "https://eth-pokt.nodies.app",
+    "api": [
+      "https://ethereum-rpc.publicnode.com",
+      "https://eth-pokt.nodies.app",
+      "https://rpc.ankr.com/eth"
+    ],
     "id": 1,
     "nativeAsset": "ETH",
     "tokens":
@@ -171,7 +175,10 @@
   },
   {
     "name": "Polygon",
-    "api": "https://rpc.ankr.com/polygon",
+    "api": [
+      "https://polygon.gateway.tenderly.co",
+      "https://rpc.ankr.com/polygon"
+    ],
     "nativeAsset": "MATIC",
     "id": 137
   },

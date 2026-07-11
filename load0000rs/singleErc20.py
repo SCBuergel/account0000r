@@ -1,7 +1,7 @@
 import json
-from web3 import Web3
 from load0000rs.base import baseLoad0000r
 from utils import _exponential_backoff
+from rpc import build_web3
 
 class load0000r(baseLoad0000r):
     def __init__(self, skipAnalysisIfEntryExists, chain, token, metaLoad0000r, atBlock=False):
@@ -53,7 +53,7 @@ class load0000r(baseLoad0000r):
         else:
             targetBlockNumber = "latest"
 
-        web3 = Web3(Web3.HTTPProvider(chain["api"]))
+        web3 = build_web3(chain)
         erc20BalanceABI = """[
         {"inputs":[{"internalType":"address","name":"tokenHolder","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
         ]
@@ -84,7 +84,7 @@ class load0000r(baseLoad0000r):
             the self.__token object that should contain the decimals and symbol checked after the call
         """
         print(f"{self.__token['symbol']} on {self.__chain['name']}")
-        web3 = Web3(Web3.HTTPProvider(self.__chain["api"]))
+        web3 = build_web3(self.__chain)
         erc20MetadataABI = """[
         {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"pure","type":"function"},
         {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},

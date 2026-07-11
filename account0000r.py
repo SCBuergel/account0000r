@@ -6,10 +6,10 @@ from hdwallet.derivations import BIP44Derivation
 from hdwallet.utils import generate_mnemonic
 #pip install hdwallet
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
 import random
 import time
 from utils import _exponential_backoff, NonArchiveRpcError, ts_to_utc
+from rpc import build_web3
 
 
 def _to_checksum(address):
@@ -64,10 +64,8 @@ def getBlockNoFromTimestamp(chains, timestamp):
     print(f"Looking for block at {ts_to_utc(timestamp)} across {len(chains)} chain(s):")
     for c in range(len(chains)):
         name = chains[c]['name']
-        api  = chains[c]['api']
         try:
-            web3 = Web3(Web3.HTTPProvider(api))
-            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            web3 = build_web3(chains[c])
 
             first_block  = _exponential_backoff(web3.eth.get_block, 1)
             latest_block = _exponential_backoff(web3.eth.get_block, "latest")
