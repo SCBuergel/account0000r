@@ -4,7 +4,12 @@
     "api": [
       "https://ethereum-rpc.publicnode.com",
       "https://eth-pokt.nodies.app",
-      "https://rpc.ankr.com/eth"
+      "https://rpc.ankr.com/eth",
+      "https://eth.blockrazor.xyz",
+      "https://eth1.lava.build",
+      "https://rpc.mevblocker.io/fast",
+      "https://0xrpc.io/eth",
+      "https://eth.drpc.org"
     ],
     "id": 1,
     "nativeAsset": "ETH",
