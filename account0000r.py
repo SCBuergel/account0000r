@@ -8,6 +8,7 @@ from hdwallet.utils import generate_mnemonic
 from web3 import Web3
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils import _exponential_backoff, NonArchiveRpcError, ts_to_utc
 from rpc import build_web3
 
@@ -209,7 +210,7 @@ def loadChainMetadata(load0000rs, accounts, chains):
     return chains
 
 
-def loadAccountMetadata(load0000rs, accounts, chains):
+def loadAccountMetadata(load0000rs, accounts, chains, max_workers=5):
     """Takes a list of accounts and returns them enriched with metadata obtained from a list of load0000rs that are passed
 
     The load0000rs are run for every account on every chain that is passed to this function. The list of all accounts that contains the resulting analysis results is returned.
@@ -222,6 +223,10 @@ def loadAccountMetadata(load0000rs, accounts, chains):
         List of accounts which are analyzed, each account in the list is enriched with a load0000r result for each load0000r that is passed
     chains : list[chains]
         List of chains for which each load0000r is run
+    max_workers : int, optional
+        Number of RPC requests to run concurrently (default 5). Each request
+        still retries on its own via _exponential_backoff and the multi-endpoint
+        failover in rpc.py. Set to 1 for fully sequential execution.
 
     Returns
     -------
@@ -233,15 +238,19 @@ def loadAccountMetadata(load0000rs, accounts, chains):
     non_archive_rpcs = set()
     print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
     start_time = time.time()
+
+    # Build the work list first (single-threaded): create the per-chain result
+    # dicts and apply the skip logic, collecting only the (account, loader, chain)
+    # combinations that still need a network call. Keeping this on the main
+    # thread means the shared accounts structure is only ever mutated here and in
+    # the result-writeback below — never from a worker thread.
+    tasks = []
     for a in range(len(accounts)):
         address = _to_checksum(accounts[a]["address"])
-        for l in range(len(load0000rs)):
-            load0000r = load0000rs[l]
-            for ci in range(len(chains)):
-                progress = (a * len(chains) * len(load0000rs) + l * len(chains) + ci) / (len(accounts) * len(chains) * len(load0000rs)) * 100
-                c = chains[ci]
-                if ("chains" not in accounts[a]):
-                    accounts[a]["chains"] = {}
+        if ("chains" not in accounts[a]):
+            accounts[a]["chains"] = {}
+        for load0000r in load0000rs:
+            for c in chains:
                 if (c["name"] not in accounts[a]["chains"]):
                     accounts[a]["chains"][c["name"]] = {}
                 if (load0000r.skipAnalysisIfEntryExists(accounts[a], c)):
@@ -249,30 +258,51 @@ def loadAccountMetadata(load0000rs, accounts, chains):
                         print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r._metaLoad0000r.name()][load0000r.name()]['lastRun']}")
                     else:
                         print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
-
                 else:
-                    try:
-                        newEntry = load0000r.analyze(address, c)
-                    except NonArchiveRpcError as e:
-                        non_archive_rpcs.add(str(e))
-                        continue
-                    except Exception as e:
-                        error = f"ERROR loading {load0000r.name()} for {address} on {c['name']}, {e}"
-                        print(error)
-                        errors.append(error)
-                        continue
+                    tasks.append((a, load0000r, c, address))
 
-                    if (newEntry is not None):
-                        time_now = time.time()
-                        if progress > 0:
-                            print(f"progress: {progress:.3f}% in {time_now - start_time:.0f}s ({address} on {c['name']}, running {load0000r.name()}, estimated time remaining: {(time_now - start_time) / progress * 100 - time_now + start_time:.0f}s...)")
-                        if load0000r._metaLoad0000r:
-                            metaName = load0000r._metaLoad0000r.name()
-                            if (metaName not in accounts[a]["chains"][c["name"]]):
-                                accounts[a]["chains"][c["name"]][metaName] = {}
-                            accounts[a]["chains"][c["name"]][metaName][load0000r.name()] = newEntry
-                        else:
-                            accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
+    total = len(tasks)
+
+    def _store(a, load0000r, c, newEntry):
+        if newEntry is None:
+            return
+        if load0000r._metaLoad0000r:
+            metaName = load0000r._metaLoad0000r.name()
+            if (metaName not in accounts[a]["chains"][c["name"]]):
+                accounts[a]["chains"][c["name"]][metaName] = {}
+            accounts[a]["chains"][c["name"]][metaName][load0000r.name()] = newEntry
+        else:
+            accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
+
+    # Run the network calls concurrently. Each worker thread only calls
+    # load0000r.analyze() (which builds its own Web3, so no web3 object is shared
+    # between threads); results are written back here on the main thread as each
+    # future completes.
+    done = 0
+    with ThreadPoolExecutor(max_workers=max(1, max_workers)) as executor:
+        futures = {executor.submit(ld.analyze, addr, c): (a, ld, c, addr)
+                   for (a, ld, c, addr) in tasks}
+        for future in as_completed(futures):
+            a, load0000r, c, address = futures[future]
+            try:
+                newEntry = future.result()
+            except NonArchiveRpcError as e:
+                non_archive_rpcs.add(str(e))
+                continue
+            except Exception as e:
+                error = f"ERROR loading {load0000r.name()} for {address} on {c['name']}, {e}"
+                print(error)
+                errors.append(error)
+                continue
+
+            _store(a, load0000r, c, newEntry)
+            done += 1
+            elapsed = time.time() - start_time
+            pct = done / total * 100 if total else 100.0
+            eta = elapsed / done * (total - done) if done else 0
+            print(f"progress: {pct:.1f}% ({done}/{total}) in {elapsed:.0f}s "
+                  f"({address} on {c['name']}, {load0000r.name()}, ~{eta:.0f}s remaining)")
+
     _print_non_archive_warning(non_archive_rpcs)
     if errors:
         print(f"{len(errors)} errors:")
