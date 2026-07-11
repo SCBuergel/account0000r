@@ -1,3 +1,17 @@
+# claude-ui safety rules
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+credentials.json
+service-account*.json
+.secrets
+.secrets/
+
 *.swp
 *.swo
 secrets.json

@@ -165,7 +165,7 @@
   },
   {
     "name": "BNB Smart Chain",
-    "api": "https://binance.llamarpc.com",
+    "api": "https://bsc-rpc.publicnode.com",
     "id": 56,
     "nativeAsset": "BNB"
   },
