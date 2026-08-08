@@ -17,8 +17,17 @@ account0000r lets you check EVM accounts accross chains. It keeps a local record
 ## Prerequisites
 account0000r expects a local python installation. I recommend [`pyenv`](https://github.com/pyenv/pyenv-installer) for that and have [automated](https://github.com/SCBuergel/SEQS) the installation of that setup for my QubesOS.
 
-Install Python 3.11 and the required packages via
+Install pyenv, Python 3.11 and the required packages via
 ```
+sudo apt install -y build-essential libssl-dev zlib1g-dev \
+  libbz2-dev libreadline-dev libsqlite3-dev curl git \
+  libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
+  libffi-dev liblzma-dev pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+source ~/.bashrc
+pyenv install 3.11
 pyenv local 3.11
 pip install -r requirements.txt
 ```
