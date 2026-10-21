@@ -81,7 +81,7 @@ def test_cryptocompare_needs_a_key_and_reads_the_last_candle(monkeypatch):
     assert loader.fetchPrice("ETH", 0) is None
 
 
-def test_coingecko_reports_api_errors_and_resolves_ids(monkeypatch):
+def test_coingecko_reports_api_errors_and_resolves_ids(monkeypatch, capsys):
     from priceLoad0000rs import coingecko
 
     def fake_get(url, params=None, headers=None, timeout=None):
@@ -99,3 +99,6 @@ def test_coingecko_reports_api_errors_and_resolves_ids(monkeypatch):
     prices, missing = loader.load(["HOPR", "ETH", "GONE", "NOPE"], 1735689600)
     assert prices == {"HOPR": 0.05}
     assert missing == ["ETH", "GONE", "NOPE"]  # API errors are logged; NOPE has no id in the list
+    out = capsys.readouterr().out
+    assert "HTTP 401: exceeds the allowed time range" in out
+    assert "HTTP 404: coin not found" in out
