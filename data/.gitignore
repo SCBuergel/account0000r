@@ -1,5 +1,7 @@
+# everything written into data/ is personal; only the samples below are tracked
 *
 !.gitignore
-!accountsBlank.json
-!accounts-2022-07-09--22-20-10.json
+!accounts-blank-sample.json
 !assetPrices-manual.csv
+!chains-sample.json
+!chains.json

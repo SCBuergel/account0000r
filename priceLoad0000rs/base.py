@@ -1,60 +1,37 @@
+"""Base class for price loaders: a USD price for a symbol at a Unix timestamp."""
+
 from abc import ABC, abstractmethod
-from datetime import datetime
 
 
 class basePriceLoad0000r(ABC):
-    """Abstract base class for EOY (end-of-year) asset price loaders.
-
-    Concrete implementations fetch a closing price in USD for a given symbol
-    at a given Unix timestamp.  The orchestrator (loadAssetPrices) calls
-    load() on each loader in priority order, stopping at the first success.
-    """
+    @abstractmethod
+    def name(self):
+        """Identifier used in log lines, e.g. "cryptocompare"."""
 
     @abstractmethod
-    def name(self) -> str:
-        """Unique identifier for this price source (e.g. 'cryptocompare')."""
-        pass
+    def version(self):
+        """Version string."""
 
     @abstractmethod
-    def version(self) -> str:
-        """Semver-style version string."""
-        pass
+    def fetchPrice(self, symbol, timestamp):
+        """USD price of `symbol` (upper case) at `timestamp`, or None if unknown."""
 
-    @abstractmethod
-    def fetchPrice(self, symbol: str, timestamp: int) -> float | None:
-        """Return the closing USD price of *symbol* at *timestamp* (Unix seconds).
+    def load(self, symbols, timestamp, resolved=None):
+        """Price every symbol in `symbols`. Returns (prices, missing): a symbol -> price
+        dict and the list of symbols this loader could not price.
 
-        Returns None if the price cannot be determined.
+        `resolved` holds the prices found by earlier loaders; only the aliases loader
+        uses it. Exceptions from fetchPrice are logged and count as missing.
         """
-        pass
-
-    def load(self, symbols: list[str], timestamp: int, resolved: dict | None = None) -> tuple[dict, list[str]]:
-        """Fetch prices for all *symbols* at *timestamp*.
-
-        Parameters
-        ----------
-        resolved : dict[str, float], optional
-            Prices already fetched by earlier loaders in the pipeline.  Most
-            loaders ignore this; the aliases loader uses it to look up
-            underlying asset prices.
-
-        Returns
-        -------
-        prices : dict[str, float]
-            Prices that were successfully fetched.
-        missing : list[str]
-            Symbols for which no price could be found.
-        """
-        prices = {}
-        missing = []
+        prices, missing = {}, []
         for symbol in symbols:
             try:
                 price = self.fetchPrice(symbol, timestamp)
             except Exception as e:
                 print(f"[{self.name()}] error fetching {symbol}: {e}")
                 price = None
-            if price is not None:
-                prices[symbol] = price
-            else:
+            if price is None:
                 missing.append(symbol)
+            else:
+                prices[symbol] = price
         return prices, missing
