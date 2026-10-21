@@ -49,7 +49,10 @@ the repository root; all paths in the code are relative to it.
 - Always connect through `rpc.build_web3(chain)`. It injects the POA middleware and the
   per-chain failover cursor; a bare `Web3(HTTPProvider(...))` would lose both.
 - Wrap RPC calls in `utils.retry`. It turns "missing trie node" into `NonArchiveRpcError`,
-  which `loadAccountMetadata` collects into one warning instead of retrying.
+  which `loadAccountMetadata` collects into one warning instead of retrying. Two calls
+  deliberately skip it: the probes in `accounting.checkChain` (a failure is the answer)
+  and `symbol()` in `singleErc20.loadTokenMetadata` (MKR and SAI always fail to decode;
+  retrying would cost minutes per token).
 - A step of `accounting.py` reads only files written by earlier steps and writes only its
   own file, so any step can be re-run alone.
 

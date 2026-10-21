@@ -71,6 +71,8 @@ def checkChain(chain):
 def step0_check_chains(ctx):
     requireFile(CHAINS_FILE, "create it from data/chains-sample.json")
     chains = account0000r.readJson(CHAINS_FILE)
+    if not chains:
+        sys.exit(f"ERROR: {CHAINS_FILE} lists no chains")
     print(f"step0: checking {len(chains)} chain(s) from {CHAINS_FILE}")
     unreachable, nonArchive = [], []
     with ThreadPoolExecutor(max_workers=len(chains)) as pool:

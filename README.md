@@ -89,6 +89,9 @@ their decimals are read from the chain, you only give symbol and address.
 ]
 ```
 
+`data/chains.json` is tracked in git. If you put an endpoint URL that contains an API
+key there, commit it only if the repository is private.
+
 End-of-year balances need **archive** endpoints (ones that can answer "balance at block
 N" for old N). `python accounting.py 2024 0` tells you which of your endpoints qualify,
 and `python rpc_test.py` measures success rate and latency of every endpoint listed.

@@ -34,8 +34,10 @@ def _get(url, params):
     response = requests.get(url, params=params, headers=headers, timeout=15)
     data = response.json()
     if response.status_code != 200:
-        message = data.get("error", {}).get("status", {}).get("error_message") if isinstance(data, dict) else None
-        raise RuntimeError(f"HTTP {response.status_code}: {message or data}")
+        error = data.get("error", data) if isinstance(data, dict) else data
+        if isinstance(error, dict):  # {"error": {"status": {"error_message": ...}}}
+            error = error.get("status", {}).get("error_message", error)
+        raise RuntimeError(f"HTTP {response.status_code}: {error}")
     return data
 
 

@@ -50,6 +50,12 @@ def test_failover_returns_last_error_when_all_endpoints_fail(fakeRpc, chains):
     behaviour["http://b.invalid"] = ConnectionError("down")
     assert rpc.build_web3(chains[1]).provider.make_request("x", []) == nonArchive
 
+    # a dead endpoint's error must not hide the archive error of another endpoint
+    behaviour["http://b.invalid"] = {"error": {"code": -32000, "message": "Unauthorized"}}
+    rpc._CURSORS["Sidechain"] = 1
+    assert rpc.build_web3(chains[1]).provider.make_request("x", []) == nonArchive
+
     behaviour["http://a.invalid"] = ConnectionError("down")
+    behaviour["http://b.invalid"] = ConnectionError("down")
     with pytest.raises(ConnectionError):
         rpc.build_web3(chains[1]).provider.make_request("x", [])

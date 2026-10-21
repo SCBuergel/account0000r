@@ -89,10 +89,13 @@ def test_coingecko_reports_api_errors_and_resolves_ids(monkeypatch):
             return FakeResponse([{"id": "hopr", "symbol": "hopr", "name": "HOPR"}])
         if "hopr" in url:
             return FakeResponse({"market_data": {"current_price": {"usd": 0.05}}})
-        return FakeResponse({"error": {"status": {"error_message": "exceeds the allowed time range"}}}, 401)
+        if "ethereum" in url:
+            return FakeResponse({"error": {"status": {"error_message": "exceeds the allowed time range"}}}, 401)
+        return FakeResponse({"error": "coin not found"}, 404)
 
     monkeypatch.setattr(coingecko.requests, "get", fake_get)
     loader = coingecko.load0000r()
-    prices, missing = loader.load(["HOPR", "ETH", "NOPE"], 1735689600)
+    loader._ids["GONE"] = "gone"
+    prices, missing = loader.load(["HOPR", "ETH", "GONE", "NOPE"], 1735689600)
     assert prices == {"HOPR": 0.05}
-    assert missing == ["ETH", "NOPE"]  # ETH: API error is logged; NOPE: no id in the list
+    assert missing == ["ETH", "GONE", "NOPE"]  # API errors are logged; NOPE has no id in the list

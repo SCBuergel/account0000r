@@ -42,6 +42,7 @@ def test_accounts_from_secrets_matches_known_test_vectors():
 
 
 def test_load_account_metadata_stores_results_and_skips_existing(accounts, chains):
+    accounts[0]["address"] = accounts[0]["address"].lower()
     plain = CountingLoader("plain")
     nested = CountingLoader("child", meta=metaLoad0000rErc20.load0000r())
     accounts, errors = account0000r.loadAccountMetadata([plain, nested], accounts, chains, max_workers=2)
@@ -49,8 +50,8 @@ def test_load_account_metadata_stores_results_and_skips_existing(accounts, chain
     assert len(plain.calls) == len(nested.calls) == 4  # 2 accounts x 2 chains
     assert accounts[0]["chains"]["Sidechain"]["plain"]["value"] == 1
     assert accounts[1]["chains"]["Sidechain"][metaLoad0000rErc20.NAME]["child"]["value"] == 1
-    # addresses reach the loader checksummed
-    assert plain.calls[0][0] == accounts[0]["address"]
+    # addresses reach the loader checksummed even when stored in lower case
+    assert plain.calls[0][0] == "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 
     again = CountingLoader("plain", skip=True)
     account0000r.loadAccountMetadata([again], accounts, chains, max_workers=1)
@@ -87,3 +88,24 @@ def test_generate_token_loaders_skips_tokens_without_decimals(chains):
 def test_write_and_read_json_roundtrip(tmp_path, accounts):
     path = account0000r.writeJson(accounts, str(tmp_path / "x.json"))
     assert account0000r.readJson(path) == accounts
+
+
+def test_write_json_default_name_uses_the_time_of_the_call(tmp_path, monkeypatch):
+    (tmp_path / "data").mkdir()
+    monkeypatch.chdir(tmp_path)
+
+    class FakeDatetime:
+        stamp = "2025-01-01--00-00-00"
+
+        @classmethod
+        def now(cls):
+            return cls
+
+        @classmethod
+        def strftime(cls, fmt):
+            return cls.stamp
+
+    monkeypatch.setattr(account0000r, "datetime", FakeDatetime)
+    assert account0000r.writeJson([]) == "data/accounts-2025-01-01--00-00-00.json"
+    FakeDatetime.stamp = "2025-06-01--12-00-00"
+    assert account0000r.writeJson([]) == "data/accounts-2025-06-01--12-00-00.json"

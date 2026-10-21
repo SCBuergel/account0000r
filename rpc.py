@@ -13,6 +13,8 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.providers import HTTPProvider
 
+from utils import is_non_archive_error
+
 _CURSORS = {}  # chain name -> index of the active endpoint
 
 
@@ -54,10 +56,11 @@ class FailoverHTTPProvider(HTTPProvider):
         Both a transport failure and a JSON-RPC error response move to the next
         endpoint: the read-only calls this tool makes never legitimately fail, so an
         error means the endpoint is unusable (no archive data, API key required, rate
-        limited). If every endpoint fails, the last error response is returned, or the
-        last exception raised, so that utils.retry can classify it.
+        limited). If every endpoint fails, an error response is returned, or the last
+        exception raised, so that utils.retry can classify it. A "not an archive node"
+        response is preferred over other errors so that it is reported and not retried.
         """
-        lastError = lastResponse = None
+        lastError = lastResponse = nonArchiveResponse = None
         for _ in self._endpoints:
             self.endpoint_uri = self._current_uri()
             try:
@@ -68,11 +71,13 @@ class FailoverHTTPProvider(HTTPProvider):
                 if "error" not in response:
                     return response
                 lastResponse, reason = response, str(response["error"])[:100]
+                if is_non_archive_error(response["error"]):
+                    nonArchiveResponse = nonArchiveResponse or response
             if len(self._endpoints) > 1:
                 print(f"[rpc failover] {self._key}: {self.endpoint_uri} failed ({reason}) "
                       f"-> switching to {self._rotate()}")
         if lastResponse is not None:
-            return lastResponse
+            return nonArchiveResponse or lastResponse
         raise lastError
 
 
