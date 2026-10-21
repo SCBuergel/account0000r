@@ -1,88 +1,83 @@
-import requests
-from datetime import datetime, timezone
-from priceLoad0000rs.base import basePriceLoad0000r
+"""Historical prices from the CoinGecko /coins/{id}/history endpoint.
 
+Without a key the public API serves dates within the last 365 days only, which is enough
+for current prices and for an end-of-year run done early in the next year. A demo key in
+the COINGECKO_API_KEY environment variable lifts the rate limit but not the 365-day limit.
+
+CoinGecko identifies coins by id ("ethereum"), not symbol. The full coin list is
+downloaded once to map symbol -> id; where several coins share a symbol the first match
+wins unless DEFAULT_IDS or symbol_overrides pins the id.
+"""
+
+import os
+from datetime import datetime, timezone
+
+import requests
+
+from priceLoad0000rs.base import basePriceLoad0000r
 
 _COINS_LIST_URL = "https://api.coingecko.com/api/v3/coins/list"
 _HISTORY_URL = "https://api.coingecko.com/api/v3/coins/{id}/history"
 
+DEFAULT_IDS = {
+    "ETH": "ethereum", "WETH": "weth", "USDC": "usd-coin", "USDT": "tether", "DAI": "dai",
+    "WBTC": "wrapped-bitcoin", "XDAI": "xdai", "GNO": "gnosis", "MATIC": "matic-network",
+    "BNB": "binancecoin", "COW": "cow-protocol",
+}
+
+
+def _get(url, params):
+    """GET a CoinGecko URL and return its JSON. Raises with the API's own message on errors."""
+    headers = {}
+    if os.environ.get("COINGECKO_API_KEY"):
+        headers["x-cg-demo-api-key"] = os.environ["COINGECKO_API_KEY"]
+    response = requests.get(url, params=params, headers=headers, timeout=15)
+    data = response.json()
+    if response.status_code != 200:
+        message = data.get("error", {}).get("status", {}).get("error_message") if isinstance(data, dict) else None
+        raise RuntimeError(f"HTTP {response.status_code}: {message or data}")
+    return data
+
 
 class load0000r(basePriceLoad0000r):
-    """Fetch EOY prices from the CoinGecko /coins/{id}/history endpoint.
+    def __init__(self, symbol_overrides=None):
+        self._ids = {**DEFAULT_IDS, **{k.upper(): v for k, v in (symbol_overrides or {}).items()}}
+        self._listFetched = False
 
-    CoinGecko identifies assets by *id* (e.g. "ethereum"), not by ticker
-    symbol.  On first use this loader downloads the full coin list and builds
-    a symbol→id mapping.  When multiple coins share the same symbol the user
-    can pass *symbol_overrides* to pin specific CoinGecko ids.
-
-    Parameters
-    ----------
-    symbol_overrides : dict[str, str], optional
-        Maps uppercase ticker symbol to the preferred CoinGecko coin id.
-        Example: {"ETH": "ethereum", "USDC": "usd-coin"}
-    """
-
-    def __init__(self, symbol_overrides: dict | None = None):
-        self._symbol_overrides = {k.upper(): v for k, v in (symbol_overrides or {}).items()}
-        self._id_map: dict[str, str] = {}   # populated lazily
-
-    def name(self) -> str:
+    def name(self):
         return "coingecko"
 
-    def version(self) -> str:
-        return "0.0.1"
+    def version(self):
+        return "0.0.2"
 
-    def _ensure_id_map(self, symbols: list[str]) -> None:
-        """Populate self._id_map for all *symbols* not already resolved."""
-        unresolved = [s for s in symbols if s.upper() not in self._id_map and s.upper() not in self._symbol_overrides]
-        if not unresolved:
+    def _resolveIds(self, symbols):
+        """Add ids for `symbols` not yet known, downloading the coin list once."""
+        wanted = {s.upper() for s in symbols} - set(self._ids)
+        if not wanted or self._listFetched:
             return
-
-        print("[coingecko] fetching coin list to resolve symbol→id mapping…")
-        response = requests.get(_COINS_LIST_URL, params={"include_platform": "false"}, timeout=15)
-        response.raise_for_status()
-        coin_list = response.json()
-
-        upper_unresolved = {s.upper() for s in unresolved}
-        for coin in coin_list:
+        print("[coingecko] fetching the coin list to map symbols to ids")
+        coins = _get(_COINS_LIST_URL, {"include_platform": "false"})
+        self._listFetched = True
+        for coin in coins:
             sym = coin["symbol"].upper()
-            if sym in upper_unresolved and sym not in self._id_map:
-                # Keep first match; user can override ambiguous ones via symbol_overrides
-                self._id_map[sym] = coin["id"]
+            if sym in wanted and sym not in self._ids:
+                self._ids[sym] = coin["id"]
 
-    def fetchPrice(self, symbol: str, timestamp: int) -> float | None:
+    def fetchPrice(self, symbol, timestamp):
         sym = symbol.upper()
-
-        # Resolve CoinGecko id
-        coin_id = self._symbol_overrides.get(sym) or self._id_map.get(sym)
-        if coin_id is None:
-            # Lazy single-symbol resolution
-            self._ensure_id_map([sym])
-            coin_id = self._symbol_overrides.get(sym) or self._id_map.get(sym)
-        if coin_id is None:
-            print(f"[coingecko] no coin id found for {sym}")
+        self._resolveIds([sym])
+        coinId = self._ids.get(sym)
+        if coinId is None:
+            print(f"[coingecko] no coin id for {sym}")
             return None
-
-        # CoinGecko /history expects DD-MM-YYYY
-        dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        date_str = dt.strftime("%d-%m-%Y")
-
-        response = requests.get(
-            _HISTORY_URL.format(id=coin_id),
-            params={"date": date_str, "localization": "false"},
-            timeout=10,
-        )
-        response.raise_for_status()
-        data = response.json()
-
+        date = datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime("%d-%m-%Y")
+        data = _get(_HISTORY_URL.format(id=coinId), {"date": date, "localization": "false"})
         try:
-            price = data["market_data"]["current_price"]["usd"]
+            return data["market_data"]["current_price"]["usd"]
         except (KeyError, TypeError):
-            print(f"[coingecko] no price in response for {sym} ({coin_id}) on {date_str}")
+            print(f"[coingecko] no price for {sym} ({coinId}) on {date}")
             return None
-        return price
 
-    def load(self, symbols: list[str], timestamp: int, resolved: dict | None = None) -> tuple[dict, list[str]]:
-        """Override to pre-resolve the full symbol list in one API call."""
-        self._ensure_id_map(symbols)
+    def load(self, symbols, timestamp, resolved=None):
+        self._resolveIds(symbols)  # one list download for all symbols
         return super().load(symbols, timestamp)

@@ -1,90 +1,59 @@
+"""Base class for account loaders.
+
+A loader fetches one piece of data (a balance, a nonce, ...) for one account on one
+chain. account0000r.loadAccountMetadata runs every loader for every account on every
+chain and stores each result at
+
+    account["chains"][chain name][loader name]
+
+or, for a child loader that belongs to a meta loader (one loader per ERC-20 token),
+
+    account["chains"][chain name][meta loader name][loader name]
+"""
+
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def targetBlock(chain, atBlock):
+    """The block to query: the chain's stored end-of-year block, or "latest"."""
+    if not atBlock:
+        return "latest"
+    return chain["metadata"]["blockNumberByTimestamp"]["blockNumber"]
+
 
 class baseLoad0000r(ABC):
-    """Abstract base class from which other load0000r modules that implement analysis functionality are derived
-    """
-    
-    def __new__(cls, *args, **kwargs):
-        r = object.__new__(cls)
-
-        # set this property to true (e.g. in constructor of derived class) to avoid running the analysis again if an entry for the load0000r already exists
-        r._shouldSkipAnalysisIfEntryExists = False
-        
-        # if the derived class is a childLoad0000r, reference its metaLoad0000r here (eg. in constructor)
-        r._metaLoad0000r = {}
-
-        # load0000rs that identify as this can be handled via VPN, HOPR or other privacy-preserving means to call remote APIs in a privacy-preserving fashion
-        r._callsRemoteApi = False
-
-        return r
+    # True: skip accounts that already have a result for this loader (used for re-runs).
+    _shouldSkipAnalysisIfEntryExists = False
+    # Child loaders set this to their meta loader; results are then nested under its name.
+    _metaLoad0000r = None
 
     @abstractmethod
     def name(self):
-        """The implementation function returns the name of the load0000r module
+        """Key under which results are stored. Unique per loader instance."""
 
-        Returns
-        
-        string
-            Name of the derived load0000r module
-        """
-        pass
-    
     @abstractmethod
     def version(self):
-        """The implementation functions returns the semver-styled version of the load0000r module
+        """Version string stored with every result."""
 
-        Returns
-        -------
-        string
-            Semver version number of the derived load0000r module
-        """
-        pass
-    
     @abstractmethod
-    def analyze(self, account):
-        """The implementation function that runs the actual analysis of the account and writes a new result entry into the account object
-
-        Parameters
-        ----------
-        account : account
-            account loaded by account0000r
-
-        Returns
-        -------
-        account
-            accounts with additional result entry from this analysis
-        """
-        pass
+    def analyze(self, account, chain):
+        """Fetch data for `account` (checksummed address string) on `chain` (a dict from
+        chains.json). Return createEmptyAccountEntry() with the result added, or None to
+        store nothing. Runs in a worker thread: do not touch shared state."""
 
     def createEmptyAccountEntry(self):
-        """Creates an empty result entry that is added to an account for each load0000r that is run
-
-        Returns
-        -------
-        object
-            An empty account entry with ["version"] and ["lastRun"] properties
-        """
-        return({
+        return {
             "version": self.version(),
-            "lastRun": datetime.utcnow().strftime("%Y-%m-%d--%H-%M-%S")
-            })
+            "lastRun": datetime.now(timezone.utc).strftime("%Y-%m-%d--%H-%M-%S"),
+        }
+
+    def existingEntry(self, account, chain):
+        """This loader's stored result for `account` on `chain`, or None."""
+        container = account.get("chains", {}).get(chain["name"], {})
+        if self._metaLoad0000r is not None:
+            container = container.get(self._metaLoad0000r.name(), {})
+        return container.get(self.name())
 
     def skipAnalysisIfEntryExists(self, account, chain):
-        """Returns True if self._skipAnalysisIfEntryExists has been set and an entry in the account exists for the current load0000r
-        
-        Parameters
-        ----------
-        account
-            object with account data
-
-        Returns
-        -------
-        bool
-            True if the analysis should be skipped
-        """
-        return (self._shouldSkipAnalysisIfEntryExists and
-                (self.name() in account["chains"][chain["name"]].keys()
-                    or (self._metaLoad0000r
-                        and self._metaLoad0000r.name() in account["chains"][chain["name"]]
-                        and self.name() in account["chains"][chain["name"]][self._metaLoad0000r.name()].keys())))
+        return self._shouldSkipAnalysisIfEntryExists and self.existingEntry(account, chain) is not None

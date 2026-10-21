@@ -1,397 +1,231 @@
-from datetime import datetime
+"""Core steps of the pipeline: derive accounts, find blocks by timestamp, build one loader
+per ERC-20 token, run loaders over accounts, and read/write the JSON files.
+
+Account dicts look like
+    {"address": "0x...", "index": 0, "mnemonic": "<description>", "profile": "personal",
+     "chains": {"<chain name>": {"<loader name>": {...result...}}}}
+Chain dicts are the entries of chains.json, optionally enriched with
+    "metadata": {"blockNumberByTimestamp": {"timestamp": ..., "blockNumber": ...}}
+and token entries enriched with "decimals".
+"""
+
 import json
-from hdwallet import BIP44HDWallet
-from hdwallet.cryptocurrencies import EthereumMainnet
-from hdwallet.derivations import BIP44Derivation
-from hdwallet.utils import generate_mnemonic
-#pip install hdwallet
-from web3 import Web3
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from utils import _exponential_backoff, NonArchiveRpcError, ts_to_utc
-from rpc import build_web3
+from datetime import datetime
+
+from hdwallet import BIP44HDWallet
+from hdwallet.cryptocurrencies import EthereumMainnet
+
+from load0000rs import singleErc20
+from rpc import build_web3, checksum
+from utils import NonArchiveRpcError, retry, ts_to_utc
 
 
-def _to_checksum(address):
-    """Returns a checksummed address (EIP-55). No-op if already checksummed."""
-    return address if Web3.is_checksum_address(address) else Web3.to_checksum_address(address)
+def readJson(path):
+    with open(path) as f:
+        return json.load(f)
 
 
-def _print_non_archive_warning(providers):
-    if providers:
-        border = "=" * 70
-        print(f"\n{border}")
-        print("WARNING: The following RPC providers do not support archive data")
-        print("and were skipped. Use a different RPC endpoint for historical queries:")
-        for p in sorted(providers):
-            print(f"  {p}")
-        print(border + "\n")
-from load0000rs.singleErc20 import load0000r
+def writeJson(data, fileName=None):
+    """Write `data` as indented JSON, by default to data/accounts-<date>.json. Returns the path."""
+    if fileName is None:
+        fileName = "data/accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"
+    with open(fileName, "w") as f:
+        json.dump(data, f, indent=2)
+    return fileName
 
-def _find_preceding_block_by_timestamp(target_timestamp, start_block, end_block, web3, chain_name=""):
-    prefix = f"  [{chain_name}]" if chain_name else " "
-    last_block_before_timestamp = None
 
-    while start_block <= end_block:
-        mid_block = (start_block + end_block) // 2
+def accountsFromSecrets(secrets, accounts=None):
+    """Derive BIP44 accounts from a list of secrets (see EXAMPLE-secrets.json) and append
+    them to `accounts`, skipping addresses that are already present.
 
-        mid_block_data = _exponential_backoff(web3.eth.get_block, mid_block)
-        mid_timestamp = mid_block_data["timestamp"]
+    Never log or store the mnemonics; only derived addresses leave this function.
+    """
+    accounts = [] if accounts is None else accounts
+    known = {a["address"] for a in accounts}
+    for s in secrets:
+        hdPath = s.get("hdPath", "m/44'/60'/0'/0")
+        numAccounts = int(s.get("numAccounts", 10))
+        offset = int(s.get("accountOffset", 0))
+        description = s.get("description", "")
 
-        if mid_timestamp is None:
-            print(f"{prefix} error fetching timestamp for block {mid_block}")
-            return None
+        wallet = BIP44HDWallet(cryptocurrency=EthereumMainnet)
+        wallet.from_mnemonic(mnemonic=s["mnemonic"], language="english",
+                             passphrase=s.get("passphrase", ""))
+        pathElements = hdPath.split("/")[1:]  # drop the leading "m"
 
-        if mid_timestamp <= target_timestamp:
-            last_block_before_timestamp = mid_block
-            start_block = mid_block + 1
+        for index in range(offset, offset + numAccounts):
+            wallet.clean_derivation()
+            for elem in pathElements:
+                wallet.from_index(int(elem.rstrip("'")), hardened=elem.endswith("'"))
+            wallet.from_index(index, hardened=False)
+            address = wallet.address()
+            if address in known:
+                continue
+            known.add(address)
+            accounts.append({"address": address, "index": index,
+                             "mnemonic": description, "chains": {}})
+    return accounts
+
+
+def filterByProfile(accounts, profile):
+    """Accounts whose "profile" equals `profile`, plus accounts without a profile.
+    profile=None keeps everything."""
+    if profile is None:
+        return accounts
+    kept = [a for a in accounts if a.get("profile", profile) == profile]
+    if len(kept) < len(accounts):
+        print(f"  profile={profile}: selected {len(kept)}/{len(accounts)} accounts")
+    return kept
+
+
+def mergeCachedChains(accounts, cachedAccounts):
+    """Copy the "chains" results of cachedAccounts onto the accounts with the same
+    address, so a re-run only fetches what is missing. Returns how many were merged."""
+    cached = {a["address"].lower(): a.get("chains") for a in cachedAccounts}
+    merged = 0
+    for account in accounts:
+        chains = cached.get(account["address"].lower())
+        if chains:
+            account["chains"] = chains
+            merged += 1
+    return merged
+
+
+def _lastBlockBefore(web3, timestamp, low, high):
+    """Binary search for the highest block number whose timestamp is <= `timestamp`."""
+    found = None
+    while low <= high:
+        mid = (low + high) // 2
+        if retry(web3.eth.get_block, mid)["timestamp"] <= timestamp:
+            found, low = mid, mid + 1
         else:
-            end_block = mid_block - 1
-
-    return last_block_before_timestamp
+            high = mid - 1
+    return found
 
 
 def getBlockNoFromTimestamp(chains, timestamp):
-    """Returns the chains list enriched with the block number closest to (but not exceeding) timestamp on each chain.
-
-    Parameters
-    ----------
-    chains : list
-        list of chain objects
-    timestamp: int
-        Unix timestamp to look for
-    """
+    """Store on every chain, under metadata.blockNumberByTimestamp, the last block mined
+    at or before `timestamp`. Chains that cannot be reached are skipped with a message."""
     print(f"Looking for block at {ts_to_utc(timestamp)} across {len(chains)} chain(s):")
-    for c in range(len(chains)):
-        name = chains[c]['name']
+    for chain in chains:
+        name = chain["name"]
         try:
-            web3 = build_web3(chains[c])
-
-            first_block  = _exponential_backoff(web3.eth.get_block, 1)
-            latest_block = _exponential_backoff(web3.eth.get_block, "latest")
-
-            if timestamp < first_block.timestamp:
-                print(f"  [{name}] skipping — target {ts_to_utc(timestamp)} is before the chain's first block ({ts_to_utc(first_block.timestamp)})")
+            web3 = build_web3(chain)
+            first = retry(web3.eth.get_block, 1)
+            latest = retry(web3.eth.get_block, "latest")
+            if not first.timestamp <= timestamp <= latest.timestamp:
+                print(f"  [{name}] skipping: target is outside block 1 "
+                      f"({ts_to_utc(first.timestamp)}) .. latest ({ts_to_utc(latest.timestamp)})")
                 continue
-            if timestamp > latest_block.timestamp:
-                print(f"  [{name}] skipping — target {ts_to_utc(timestamp)} is after the latest block ({ts_to_utc(latest_block.timestamp)})")
-                continue
-
-            print(f"  [{name}] searching between block 1 ({ts_to_utc(first_block.timestamp)}) and block {latest_block.number} ({ts_to_utc(latest_block.timestamp)})...")
-            preceding_blockNo = _find_preceding_block_by_timestamp(timestamp, 1, latest_block.number, web3, chain_name=name)
-
-            result_block = _exponential_backoff(web3.eth.get_block, preceding_blockNo)
-            print(f"  [{name}] found block {preceding_blockNo} at {ts_to_utc(result_block.timestamp)}")
-
-            if "metadata" not in chains[c]:
-                chains[c]["metadata"] = {}
-            chains[c]["metadata"]["blockNumberByTimestamp"] = {
-                "timestamp": timestamp,
-                "blockNumber": preceding_blockNo
-            }
+            print(f"  [{name}] searching blocks 1..{latest.number}")
+            blockNo = _lastBlockBefore(web3, timestamp, 1, latest.number)
+            block = retry(web3.eth.get_block, blockNo)
+            print(f"  [{name}] found block {blockNo} at {ts_to_utc(block.timestamp)}")
+            chain.setdefault("metadata", {})["blockNumberByTimestamp"] = {
+                "timestamp": timestamp, "blockNumber": blockNo}
         except Exception as e:
-            print(f"  [{name}] skipping — {e}")
+            print(f"  [{name}] skipping: {e}")
     return chains
 
 
 def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=False):
-    """Generates singleErc20Load0000r instances from list of chains and adds the ERC20 decimals to all ERC20 load0000rs that are passed and makes sure that the token symbol matches what is stored on chain
+    """One singleErc20 loader per token of every chain.
 
-    Parameters
-    ----------
-    chains : list
-        list of chains
-    metaLoad0000r : metaLoad0000r
-        metaload0000r which all the returned load0000rs reference
-    loadChainData : bool
-        can be set to False to speed up the process if the chain dictionary already contains the tokens and token metadata (decimals, name, symbol checked) 
-    atBlock : bool
-        if True, it will return the load0000rs which read data at a specific block, otherwise the latest block data will be loaded
-
-    Returns
-    -------
-    list[singleErc20AtBlock.load0000r]
-        the list of load0000rs that now contains the decimals for each token on each chain
+    With loadChainData=True each token's "decimals" is read from the chain and stored in
+    the chain dict (write it to a file so later runs can pass loadChainData=False).
+    Tokens without "decimals" are skipped. Returns (loaders, chains).
     """
-    load0000rs = []
-
-    total = sum(len(chains[c].get("tokens", [])) for c in range(len(chains)))
-    done  = 0
-    start_time = time.time()
-
-    for c in range(len(chains)):
-        if "tokens" in chains[c]:
-            for t in range(len(chains[c]["tokens"])):
-                token     = chains[c]["tokens"][t]
-                chain_name = chains[c]["name"]
-                symbol    = token.get("symbol", token.get("address", "?"))
-                newLoad0000r = load0000r(True, chains[c], token, metaLoad0000r, atBlock)
+    loaders = []
+    total = sum(len(c.get("tokens", [])) for c in chains)
+    done = 0
+    start = time.time()
+    for chain in chains:
+        for token in chain.get("tokens", []):
+            done += 1
+            label = f"[{chain['name']}] {token.get('symbol', token.get('address', '?'))}"
+            loader = singleErc20.load0000r(True, chain, token, metaLoad0000r, atBlock)
+            if loadChainData:
+                print(f"  {label}: loading token metadata ({done}/{total}, {time.time() - start:.0f}s elapsed)")
                 try:
-                    if loadChainData:
-                        time_now = time.time()
-                        elapsed  = time_now - start_time
-                        if done > 0:
-                            eta = elapsed / done * (total - done)
-                            print(f"  [{chain_name}] loading token metadata: {symbol} ({done + 1}/{total}, {elapsed:.0f}s elapsed, ~{eta:.0f}s remaining)")
-                        else:
-                            print(f"  [{chain_name}] loading token metadata: {symbol} ({done + 1}/{total})")
-                        chains[c]["tokens"][t] = newLoad0000r.loadTokenMetadata()
-                    load0000rs.append(newLoad0000r)
+                    loader.loadTokenMetadata()
                 except Exception as e:
-                    print(f"  [{chain_name}] skipping {symbol}: {e}")
-                done += 1
-
-    if loadChainData:
-        print(f"token metadata: {done} token(s) processed in {time.time() - start_time:.0f}s")
-    random.shuffle(load0000rs)
-    return load0000rs, chains
-
-def loadChainMetadata(load0000rs, accounts, chains):
-    """Takes a list of chains and returns them enriched with metadata obtained from a list of chain load0000rs that are passed
-
-    The load0000rs are run for every chain that is passed to this function. The modified list of chains that contains the resulting analysis results is returned.
-
-    Parameters
-    ----------
-    load0000rs : list[baseLoad0000r]
-        List of loadors which are derived fomr baseLoad0000r and for which the analyze function is executed
-    accounts : list[account]
-        List of accounts which are passed to the chain load0000r
-    chains : list[chains]
-        List of chains for which each load0000r is run, each chain in the list is enriched with a metadata result for each load0000r that is passed
-
-
-    Returns
-    -------
-    list
-        a list of chains with the analysis results included for each chain
-    """
-
-    errors = []
-    non_archive_rpcs = set()
-    print("checking ", len(chains), " chains:")
-    for ci in range(len(chains)):
-        c = chains[ci]
-        print(f"progress: {ci / len(chains) * 100:.2f}%")
-        for load0000r in load0000rs:
-            try:
-                newEntry = load0000r.analyze(c, accounts)
-            except NonArchiveRpcError as e:
-                non_archive_rpcs.add(str(e))
+                    print(f"  {label}: skipping, {e}")
+                    continue
+            if "decimals" not in token:
+                print(f"  {label}: skipping, no decimals known (run with loadChainData=True)")
                 continue
-            except Exception as e:
-                error = f"ERROR loading {load0000r.name()} on {c['name']}: {e}"
-                print(error)
-                errors.append(error)
-                continue
+            loaders.append(loader)
+    random.shuffle(loaders)  # spread consecutive requests across chains and endpoints
+    return loaders, chains
 
-            if "metadata" not in c:
-                chains[ci]["metadata"] = {}
 
-            # this does not seem necessary - new entry can be added directly
-            # if (load0000r.name() not in chains[ci]["metadata"]):
-            #    chains[ci]["metadata"][load0000r.name()] = {}
-
-            metaLoad0000r = load0000r.metaLoad0000r
-            if not metaLoad0000r:
-                print(f"{load0000r.name()} does not have a metaLoad0000r")
-                chains[ci]["metadata"][load0000r.name()] = newEntry
-            else:
-                print(f"{load0000r.name()} does have a metaLoad0000r: {metaLoad0000r.name()}")
-                if (metaLoad0000r.name() not in chains[ci]["metadata"]):
-                    chains[ci]["metadata"][metaLoad0000r.name()] = {}
-                chains[ci]["metadata"][metaLoad0000r.name()][load0000r.name()] = newEntry()
-                # TODO: write to file (task 6)
-    _print_non_archive_warning(non_archive_rpcs)
-    if errors:
-        print(f"{len(errors)} errors:")
-        print(*errors, sep="\n")
-    return chains
+def _printNonArchiveWarning(providers):
+    if providers:
+        print("\n" + "=" * 70)
+        print("WARNING: these RPC providers are not archive nodes and were skipped for")
+        print("historical queries. Use another endpoint for them in chains.json:")
+        for p in sorted(providers):
+            print(f"  {p}")
+        print("=" * 70 + "\n")
 
 
 def loadAccountMetadata(load0000rs, accounts, chains, max_workers=5):
-    """Takes a list of accounts and returns them enriched with metadata obtained from a list of load0000rs that are passed
+    """Run every loader for every account on every chain and store the results in the
+    account dicts. Returns (accounts, errors); errors is a list of message strings.
 
-    The load0000rs are run for every account on every chain that is passed to this function. The list of all accounts that contains the resulting analysis results is returned.
-
-    Parameters
-    ----------
-    load0000rs : list[baseLoad0000r]
-        List of loadors which are derived fomr baseLoad0000r and for which the analyze function is executed
-    accounts : list[account]
-        List of accounts which are analyzed, each account in the list is enriched with a load0000r result for each load0000r that is passed
-    chains : list[chains]
-        List of chains for which each load0000r is run
-    max_workers : int, optional
-        Number of RPC requests to run concurrently (default 5). Each request
-        still retries on its own via _exponential_backoff and the multi-endpoint
-        failover in rpc.py. Set to 1 for fully sequential execution.
-
-    Returns
-    -------
-    list
-        a list of accounts with the analysis results included for each account
+    Loader calls run in a thread pool; the accounts structure is only ever changed on
+    the calling thread, so loaders must not touch it.
     """
+    print(f"checking {len(accounts)} accounts on {len(chains)} chains:")
+    tasks = []
+    for account in accounts:
+        account.setdefault("chains", {})
+        address = checksum(account["address"])
+        for loader in load0000rs:
+            for chain in chains:
+                account["chains"].setdefault(chain["name"], {})
+                if loader.skipAnalysisIfEntryExists(account, chain):
+                    print(f"skipping {loader.name()} for {address} on {chain['name']}, "
+                          f"found entry from {loader.existingEntry(account, chain)['lastRun']}")
+                else:
+                    tasks.append((account, loader, chain, address))
+
+    def store(account, loader, chain, entry):
+        container = account["chains"][chain["name"]]
+        if loader._metaLoad0000r is not None:
+            container = container.setdefault(loader._metaLoad0000r.name(), {})
+        container[loader.name()] = entry
 
     errors = []
-    non_archive_rpcs = set()
-    print("checking ", len(accounts), " accounts on ", len(chains), " chains:")
-    start_time = time.time()
-
-    # Build the work list first (single-threaded): create the per-chain result
-    # dicts and apply the skip logic, collecting only the (account, loader, chain)
-    # combinations that still need a network call. Keeping this on the main
-    # thread means the shared accounts structure is only ever mutated here and in
-    # the result-writeback below — never from a worker thread.
-    tasks = []
-    for a in range(len(accounts)):
-        address = _to_checksum(accounts[a]["address"])
-        if ("chains" not in accounts[a]):
-            accounts[a]["chains"] = {}
-        for load0000r in load0000rs:
-            for c in chains:
-                if (c["name"] not in accounts[a]["chains"]):
-                    accounts[a]["chains"][c["name"]] = {}
-                if (load0000r.skipAnalysisIfEntryExists(accounts[a], c)):
-                    if load0000r._metaLoad0000r:
-                        print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r._metaLoad0000r.name()][load0000r.name()]['lastRun']}")
-                    else:
-                        print(f"skipping {load0000r.name()} on account {accounts[a]['address']} on chain {c['name']}, found entry from {accounts[a]['chains'][c['name']][load0000r.name()]['lastRun']}")
-                else:
-                    tasks.append((a, load0000r, c, address))
-
-    total = len(tasks)
-
-    def _store(a, load0000r, c, newEntry):
-        if newEntry is None:
-            return
-        if load0000r._metaLoad0000r:
-            metaName = load0000r._metaLoad0000r.name()
-            if (metaName not in accounts[a]["chains"][c["name"]]):
-                accounts[a]["chains"][c["name"]][metaName] = {}
-            accounts[a]["chains"][c["name"]][metaName][load0000r.name()] = newEntry
-        else:
-            accounts[a]["chains"][c["name"]][load0000r.name()] = newEntry
-
-    # Run the network calls concurrently. Each worker thread only calls
-    # load0000r.analyze() (which builds its own Web3, so no web3 object is shared
-    # between threads); results are written back here on the main thread as each
-    # future completes.
+    nonArchive = set()
     done = 0
-    with ThreadPoolExecutor(max_workers=max(1, max_workers)) as executor:
-        futures = {executor.submit(ld.analyze, addr, c): (a, ld, c, addr)
-                   for (a, ld, c, addr) in tasks}
+    start = time.time()
+    with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
+        futures = {pool.submit(loader.analyze, address, chain): (account, loader, chain, address)
+                   for account, loader, chain, address in tasks}
         for future in as_completed(futures):
-            a, load0000r, c, address = futures[future]
+            account, loader, chain, address = futures[future]
             try:
-                newEntry = future.result()
+                entry = future.result()
             except NonArchiveRpcError as e:
-                non_archive_rpcs.add(str(e))
+                nonArchive.add(str(e))
                 continue
             except Exception as e:
-                error = f"ERROR loading {load0000r.name()} for {address} on {c['name']}, {e}"
-                print(error)
-                errors.append(error)
+                errors.append(f"ERROR loading {loader.name()} for {address} on {chain['name']}: {e}")
+                print(errors[-1])
                 continue
-
-            _store(a, load0000r, c, newEntry)
+            if entry is not None:
+                store(account, loader, chain, entry)
             done += 1
-            elapsed = time.time() - start_time
-            pct = done / total * 100 if total else 100.0
-            eta = elapsed / done * (total - done) if done else 0
-            print(f"progress: {pct:.1f}% ({done}/{total}) in {elapsed:.0f}s "
-                  f"({address} on {c['name']}, {load0000r.name()}, ~{eta:.0f}s remaining)")
+            elapsed = time.time() - start
+            print(f"progress: {done}/{len(tasks)} in {elapsed:.0f}s, ~{elapsed / done * (len(tasks) - done):.0f}s "
+                  f"remaining ({address} on {chain['name']}, {loader.name()})")
 
-    _print_non_archive_warning(non_archive_rpcs)
+    _printNonArchiveWarning(nonArchive)
     if errors:
         print(f"{len(errors)} errors:")
         print(*errors, sep="\n")
     return accounts, errors
-
-
-
-def accountsFromSecrets(secrets, accounts=None):
-    """Generats accounts from secrets which comprise mnemonic and optional passphrase
-
-    Warning! Only load mnemonics into software on a machine that you both fully trust, you might loose all your funds if these mnemonics are leaked or logged anywhere!
-
-    Parameters
-    ----------
-    secrets : list[secret]
-        A list of objects comprising fields for:
-            ["mnemonic"]: The mnemonic from which accounts are derived
-            ["passphrase"] (optional, default: ""): The passphrase from which the accounts are derived in combination with the mnemonics
-            ["hdPath"] (optional, default: "m/44'/60'/0'/0"): The HD key path from which the accounts are derived
-            ["numAccounts"] (optional, default: 10): The number of accounts to be derived
-            ["accountOffset"] (optional, default: 0): The offset index for which the first account is derived
-            ["description"] (optional, default: ""): The description of the mnemonic, used as a description for each account also
-    accounts : list[account], optional
-        a list of accounts to which the newly derived are appended. If a newly generated account already exists on the list, it is ignored and not overwritten or duplicated
-
-    Returns
-    -------
-    list
-        a list of accounts with the analysis results included for each account
-    """
-
-    if accounts == None:
-        accounts = []
-
-    for s in secrets:
-        MNEMONIC = s["mnemonic"]
-        PASSPHRASE = s["passphrase"] if ("passphrase" in s) else ""
-        hdPath = s["hdPath"] if ("hdPath" in s) else "m/44'/60'/0'/0"
-        numAccounts = int(s["numAccounts"]) if ("numAccounts" in s) else 10
-        accountOffset = int(s["accountOffset"]) if ("accountOffset" in s) else 0
-        description = s["description"] if ("description" in s) else ""
-
-        bip44_hdwallet: BIP44HDWallet = BIP44HDWallet(cryptocurrency=EthereumMainnet)
-        # Get Ethereum BIP44HDWallet from mnemonic
-        bip44_hdwallet.from_mnemonic(
-                mnemonic=MNEMONIC, language="english", passphrase=PASSPHRASE
-                )
-
-        # split the string hdPath into its elements and skip the first "m" element
-        pathElements = hdPath.split("/")[1:]
-
-        # Get Ethereum BIP44HDWallet informations from address index
-        for address_index in range(accountOffset, numAccounts + accountOffset):
-            bip44_hdwallet.clean_derivation()
-            for elem in pathElements:
-                # remove a potentially trailing "'"
-                numElem = int(elem.split("'")[0])
-                bip44_hdwallet.from_index(numElem, hardened=(elem.endswith("'")))
-
-            bip44_hdwallet.from_index(address_index, False)
-            address = bip44_hdwallet.address()
-
-            # only append new entry if it's not on the account list already
-            if not any(i["address"]==address for i in accounts):
-                accounts.append({
-                    "address": address,
-                    "index": address_index,
-                    "use": "",
-                    "mnemonic": description,
-                    "chains": {}
-                })
-    return accounts
-
-
-
-def writeJson(data, fileName="data/accounts-" + datetime.now().strftime("%Y-%m-%d--%H-%M-%S") + ".json"):
-    """Writes data (e.g. a list of accounts or chains) as pretty formatted JSON to a file, file will be overwritten if it already exist
-
-    Parameters
-    ----------
-    data : object
-        a python object (e.g. list of accounts or chains) loaded by account0000r
-    fileName : string, optional
-        filename to which to write, by default data is written to the data folder and the file is post-fixed with the current data and time
-    """
-    file = open(fileName, "w")
-    prettyData = json.dumps(data, indent=2)
-    file.write(prettyData)
-    file.close()
-    return fileName
-

@@ -1,321 +1,148 @@
-from tabulate import tabulate
-import numpy as np
-from collections import defaultdict
-import pandas as pd
-from itertools import groupby
+"""Analysis functions: turn loaded account data into tables and a portfolio valuation."""
+
 import os
+
+import pandas as pd
+from tabulate import tabulate
+
+from load0000rs import ethBalance, metaLoad0000rErc20, nonce
 from utils import deep_get
-from constants import (CHAIN_ETHEREUM, CHAIN_OPTIMISM,
-                       LOADER_ETH_BALANCE, LOADER_ETH_BALANCE_AT_BLOCK,
-                       LOADER_NONCE, LOADER_AIRDROP_OP, LOADER_AIRDROP_HOP_JSON)
 
 
 def printBinaryTable(data):
-    """Prints a binary table out of a list with two columns where included accounts are marked with an "X" mark
-
-    First row of the printed table contains the name of the mnemonic, first column contains the HD wallet index, the table contains "X" marks for accounts that are included in the data list
-
-    Parameters
-    ----------
-    list[string, int] : a list with two columns, first one is the name of the mnemonic, second one is the index of the HD wallet index, all accounts included in the list are marked in the printed table
-    """
-
+    """Print a grid with one column per mnemonic and one row per account index, marking
+    every (mnemonic, index) pair in `data` with an X."""
     if not data:
-        print("  (no accounts match — loader data may not be loaded yet)")
+        print("  (no accounts match; is the loader data loaded?)")
         return
-
-    npData = np.array(data)
-    if npData.ndim != 2 or npData.shape[1] < 2:
-        print(f"  (unexpected data shape {npData.shape}, expected list of [mnemonic, index] pairs)")
-        return
-    mnemonics = sorted(set(npData[:, 0]))
-    indices = sorted(set([int(elem) for elem in npData[:,1]]))
-    numRows = int(max(indices)) - int(min(indices)) + 2
-    tab = [[" " for j in range(len(mnemonics) + 1)] for i in range(numRows)]
-
-    # row 0 is the header with mnemonic names
-    tab[0] = ["index"] + [rep.replace(" ", "\n") for rep in mnemonics]
-
-    # column 0 has account indices
-    for i in range(1, numRows):
-        tab[i][0] = i + int(min(indices)) - 1
-
-    # "X" marks the accounts
-    for i in npData:
-        ind = mnemonics.index(i[0])
-        tab[int(i[1]) - int(min(indices)) + 1][ind + 1] = "X"
-
-    print(tabulate(tab, headers="firstrow", tablefmt="fancy_grid"))
+    mnemonics = sorted({m for m, _ in data})
+    indices = [int(i) for _, i in data]
+    lo, hi = min(indices), max(indices)
+    rows = [[index] + [" "] * len(mnemonics) for index in range(lo, hi + 1)]
+    for mnemonic, index in data:
+        rows[int(index) - lo][mnemonics.index(mnemonic) + 1] = "X"
+    headers = ["index"] + [m.replace(" ", "\n") for m in mnemonics]
+    print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
 
 
-
-def _check_loader_present(accounts, loader_name):
-    """Warns if no account has data for the given loader. Returns True if data exists."""
-    if not isinstance(accounts, list) or not accounts:
-        print(f"WARNING: accounts is empty or not a list (got {type(accounts).__name__}).")
-        return False
-    if not all(isinstance(a, dict) for a in accounts):
-        print(f"WARNING: accounts contains non-dict elements — check how accounts were loaded.")
-        return False
-    if not any(
-        loader_name in chain_data
-        for a in accounts
-        for chain_data in a.get("chains", {}).values()
-    ):
-        print(f"WARNING: no accounts have '{loader_name}' data loaded. Run the corresponding loader first.")
-        return False
-    return True
+def _warnIfLoaderMissing(accounts, loaderName):
+    if not any(loaderName in c for a in accounts for c in a.get("chains", {}).values()):
+        print(f"WARNING: no account has '{loaderName}' data. Run that loader first.")
 
 
-def listAccountsNonZero(accounts, load0000r=LOADER_ETH_BALANCE, dust=0, printCsv=False):
-    """Prints list of all accounts and chain names with non-dust balance
-
-    Parameters
-    ----------
-    accounts : list[account]
-        List of accounts which are printed (if non-dust balance)
-    load0000r : string, optional
-        The load0000r module for which the ["nativeBalance"] property is printed if it is non-dust, default: "ETH balance"
-    dust: number, optional
-        Accounts with native balance smaller or equal to this dust value are not listed, default: 0
-    printCsv: bool, optional
-        True prints the list in CSV format, False prints a human-readable list, default: False
-    """
-
-    print(f"List of accounts with > {dust} {load0000r} per chain")
+def listAccountsNonZero(accounts, load0000r=ethBalance.NAME, dust=0, printCsv=False):
+    """Print every (account, chain) whose native balance is above `dust`."""
+    print(f"Accounts with > {dust} {load0000r} per chain")
     for a in accounts:
-        for c in a["chains"].items():
-            if deep_get(c[1], load0000r, "nativeBalance", default=0) > dust:
-                if printCsv:
-                    print(f"{a['address']}, {c[0]}, {c[1][load0000r]['nativeBalance']},")
-                else:
-                    print(f'{a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {c[1][load0000r]["nativeBalance"]} on {c[0]}')
-
-
-
-def tableAccountsNonZeroBalance(accounts, load0000r=LOADER_ETH_BALANCE, dust=0):
-    """Prints an overview table showing all accounts with non-dust balance
-
-    Prints and overview table where all accounts with non-dust balance are highlighted with an "X" mark and all other accounts remain unmarked. This gives a quick overview of which accounts where used at all.
-
-    Parameters
-    ----------
-    accounts : list[account]
-        a list of accounts loaded by account0000r
-    load0000r : string, optional
-        The load0000r module for which the ["nativeBalance"] property is evaluated, default: "ETH balance"
-    dust : number, optional
-        accounts with native balances smaller or equal to dust are ignored and not marked on overview table, default: 0
-    """
-
-    print(f"Table of accounts with > {dust} {load0000r} per chain")
-    _check_loader_present(accounts, load0000r)
-    nonZeroBalanceAccounts = list(
-            [ad["mnemonic"], ad["index"]] 
-            for ad in accounts
-            if sum(
-                list(deep_get(v, load0000r, "nativeBalance", default=0)
-                for v in list(ad["chains"].values()))
-                ) > dust)
-    printBinaryTable(nonZeroBalanceAccounts)
-
-
-
-def listAccountsAirdropOP(accounts):
-    """Prints an overview table showing all accounts which received an Optimism airdrop
-
-    Parameters
-    ----------
-    accounts : list[account]
-        a list of accounts loaded by account0000r
-    """
-
-    print("List of accounts which received the Optimism airdrop")
-    for a in accounts:
-        c = a["chains"].get(CHAIN_OPTIMISM, {})
-        airdropAmount = deep_get(c, LOADER_AIRDROP_OP, "airdropOp", default=0)
-        if airdropAmount > 0:
-            print(f'OP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
-
-
-
-def listAccountsAirdropHop(accounts):
-    """Prints an overview table showing all accounts which received an HOP airdrop
-
-    Parameters
-    ----------
-    accounts : list[account]
-        a list of accounts loaded by account0000r
-    """
-
-    print("List of accounts which received the HOP airdrop")
-    for a in accounts:
-        c = a["chains"].get(CHAIN_ETHEREUM, {})
-        airdropAmount = deep_get(c, LOADER_AIRDROP_HOP_JSON, "amountToken", default=0)
-        if airdropAmount > 0:
-            print(f'HOP airdrop for {a["address"]} ({a["mnemonic"]}, account index {a["index"]}): {airdropAmount}')
-
-
-
-def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
-    ac = pd.DataFrame(accounts)
-    c = pd.DataFrame(chains)
-    coinLoad0000r = LOADER_ETH_BALANCE_AT_BLOCK if atBlock else LOADER_ETH_BALANCE
-    tokenLoad0000r = "ERC20 balances"
-    
-    missing = []
-    coinRows = []
-    for a in range(ac.shape[0]):
-        address = ac.iloc[a]['address']
-        for chainName, chainData in ac.iloc[a]["chains"].items():
-            balance = deep_get(chainData, coinLoad0000r, "nativeBalance")
-            if balance is None:
-                missing.append(f"  {address} on {chainName}: '{coinLoad0000r}' not loaded")
-                continue
+        for chainName, chainData in a["chains"].items():
+            balance = deep_get(chainData, load0000r, "nativeBalance", default=0)
             if balance > dust:
-                nativeAsset = c[c.name == chainName].nativeAsset.to_string(index=False).strip()
-                coinRows.append([address, chainName, balance, nativeAsset])
+                if printCsv:
+                    print(f"{a['address']}, {chainName}, {balance},")
+                else:
+                    print(f"{a['address']} ({a['mnemonic']}, index {a['index']}): {balance} on {chainName}")
 
-    if missing:
-        print(f"WARNING: missing '{coinLoad0000r}' data for {len(missing)} account/chain combinations (skipped):")
-        print("\n".join(missing))
 
-    coinBalances = pd.DataFrame(coinRows)
-
-    tokenBalances = pd.DataFrame()
-    for a in range(ac.shape[0]):
-        for chainItems in ac.iloc[a]["chains"].items():
-            if tokenLoad0000r in chainItems[1]:
-                for token in chainItems[1][tokenLoad0000r].values():
-                    if token["erc20Balance"]['balance'] > dust:
-                        tokenBalances = pd.concat([tokenBalances, pd.DataFrame([[ac.iloc[a]['address'], chainItems[0], token["erc20Balance"]['balance'], token['erc20Balance']['symbol']]])])
-    
-    tokenBalances = pd.concat([tokenBalances, coinBalances])
-    tokenBalances.columns = ["Address", "Chain", "Balance", "Asset"]
-    # print(tokenBalances)
-    return tokenBalances
-
+def tableAccountsNonZeroBalance(accounts, load0000r=ethBalance.NAME, dust=0):
+    """Grid of accounts whose native balance summed over all chains is above `dust`."""
+    print(f"Accounts with > {dust} {load0000r} summed over chains")
+    _warnIfLoaderMissing(accounts, load0000r)
+    printBinaryTable([
+        (a["mnemonic"], a["index"]) for a in accounts
+        if sum(deep_get(c, load0000r, "nativeBalance", default=0) for c in a["chains"].values()) > dust
+    ])
 
 
 def tabulateNonZeroNonce(accounts):
-    _check_loader_present(accounts, LOADER_NONCE)
-    table = []
+    """Grid of accounts that sent at least one transaction on any chain."""
+    _warnIfLoaderMissing(accounts, nonce.NAME)
+    printBinaryTable([
+        (a["mnemonic"], a["index"]) for a in accounts
+        if any(deep_get(c, nonce.NAME, "nonce", default=0) > 0 for c in a["chains"].values())
+    ])
+
+
+def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
+    """DataFrame with columns Address, Chain, Balance, Asset: every native and ERC-20
+    balance above `dust`. atBlock selects the end-of-year loader results."""
+    nativeLoader = ethBalance.NAME_AT_BLOCK if atBlock else ethBalance.NAME
+    nativeAsset = {c["name"]: c.get("nativeAsset", "?") for c in chains}
+    rows, missing = [], []
     for a in accounts:
-        for c in a["chains"].values():
-            if deep_get(c, LOADER_NONCE, "nonce", default=0) > 0:
-                table.append([a["mnemonic"], a["index"]])
-                break
-    print(table)
-    printBinaryTable(table)
+        for chainName, chainData in a.get("chains", {}).items():
+            balance = deep_get(chainData, nativeLoader, "nativeBalance")
+            if balance is None:
+                missing.append(f"  {a['address']} on {chainName}")
+            elif balance > dust:
+                rows.append((a["address"], chainName, balance, nativeAsset.get(chainName, "?")))
+            for loaderName, entry in chainData.get(metaLoad0000rErc20.NAME, {}).items():
+                if loaderName.endswith(" atBlock") != atBlock:
+                    continue
+                token = entry.get("erc20Balance", {})
+                if token.get("balance", 0) > dust:
+                    rows.append((a["address"], chainName, token["balance"], token["symbol"]))
+    if missing:
+        print(f"WARNING: '{nativeLoader}' not loaded for {len(missing)} account/chain pairs (skipped):")
+        print("\n".join(missing))
+    return pd.DataFrame(rows, columns=["Address", "Chain", "Balance", "Asset"])
 
 
-
-def tabulateAllAccounts(accounts):
-    for a in accounts:
-        print(a["address"])
-
-
-
-def printAllAccountUse(accounts):
-    accounts.sort(key=lambda x: (x['mnemonic'].lower(), x['index']))
-
-    # Grouping by 'mnemonic' and printing each group in the specified format
-    for mnemonic, group in groupby(accounts, key=lambda x: x['mnemonic']):
-        print(f"{mnemonic}:")
-        for item in group:
-            print(f"  {item['index']} - {item['address']}: {item['use']}")
-        print("")
-
-def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPrices.csv", storeCsv=True):
-    """Prints portfolio value overview with all accounts, per asset, per account and total portfolio sum and a list of assets who are not priced in the the asset prices CSV file
-
-    Parameters
-    ----------
-    accounts : list[account]
-        a list of accounts loaded by account0000r
-    chains : list[chain]
-        a list of chains loaded by account0000r
-    atBlock : bool, optional
-        reads account information with the "at block" load0000rs (for native coins and erc20 tokens), default False
-    assetPriceCsv : string, optional
-        CSV file name containing asset name and price (in USD)
-    storeCsv : bool, optional
-        stores output CSVs for the 3 data sets that are being printed to the screen if True (default)
-    """
-
-    if os.path.exists(assetPricesCsv):
-        prices = pd.read_csv(assetPricesCsv, skipinitialspace=True)
-    else:
-        prices = pd.DataFrame(columns=["Asset", "Price"])
-    accountBalances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
-    chainDf = pd.DataFrame(chains)
-    accountBalances["Asset"] = accountBalances["Asset"].str.upper()
-    prices["Asset"] = prices["Asset"].str.upper()
-    accountBalances = accountBalances.join(prices.set_index("Asset"), on="Asset")
-    accountValues = pd.DataFrame(accountBalances.Balance * accountBalances.Price)
-    accountBalances = pd.concat([accountBalances, accountValues], axis=1)
-    accountBalances.rename(columns = {list(accountBalances)[-1]: 'Value'}, inplace = True)
-
-    accountBalances['Value_sum'] = accountBalances.groupby('Address')['Value'].transform('sum')
-    accountBalances.sort_values(by=['Value_sum', 'Address', 'Value', 'Chain', 'Asset'],
-               ascending=[False, True, False, True, True],
-               inplace=True,
-               key=lambda x: x.str.lower() if x.name in ['Address', 'Chain', 'Asset'] else x)
-    accountBalances.drop(columns=['Value_sum'], inplace=True)
+def readPrices(assetPricesCsv):
+    """Asset -> USD price Series from an Asset,Price CSV; empty if the file is missing."""
+    if not os.path.exists(assetPricesCsv):
+        return pd.Series(dtype=float)
+    prices = pd.read_csv(assetPricesCsv, skipinitialspace=True)
+    prices["Asset"] = prices["Asset"].str.strip().str.upper()
+    return prices.drop_duplicates("Asset").set_index("Asset")["Price"]
 
 
-    prettyBalances = accountBalances.copy()
-    prettyBalances.Balance = prettyBalances.Balance.map('{:,}'.format)
-    prettyBalances.Price = prettyBalances.Price.map(lambda p: f'${p:,.4f}' if pd.notna(p) else '(no price)')
-    prettyBalances.Value = prettyBalances.Value.map(lambda v: f'${v:,.2f}' if pd.notna(v) else '?')
+def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPrices.csv",
+                   storeCsv=True, outputDir="data"):
+    """Print every balance with its USD value, totals per asset and per address, and the
+    portfolio total. Assets without a price are listed as a warning. With storeCsv the
+    three tables are also written to <outputDir>/{account_balances,asset_values,address_values}.csv.
+    Returns the balances DataFrame."""
+    prices = readPrices(assetPricesCsv)
+    balances = listAllNonDustBalances(accounts, chains, atBlock=atBlock)
+    balances["Asset"] = balances["Asset"].str.upper()
+    balances["Price"] = balances["Asset"].map(prices)
+    balances["Value"] = balances["Balance"] * balances["Price"]
 
+    byAddress = balances.groupby("Address")["Value"].sum().sort_values(ascending=False)
+    balances["_total"] = balances["Address"].map(byAddress)
+    balances = (balances.sort_values(["_total", "Address", "Value"], ascending=[False, True, False])
+                .drop(columns="_total").reset_index(drop=True))
+
+    pretty = balances.copy()
+    pretty["Balance"] = pretty["Balance"].map("{:,}".format)
+    pretty["Price"] = pretty["Price"].map(lambda p: f"${p:,.4f}" if pd.notna(p) else "(no price)")
+    pretty["Value"] = pretty["Value"].map(lambda v: f"${v:,.2f}" if pd.notna(v) else "?")
     print("All accounts and balances:")
-    print(prettyBalances.to_string(index=False))
+    print(pretty.to_string(index=False))
 
-    valueByAsset = pd.DataFrame(accountBalances.groupby("Asset").agg({"Balance": "sum", "Value": "sum", "Price": "first"}))
+    byAsset = balances.groupby("Asset").agg(Balance=("Balance", "sum"), Price=("Price", "first"),
+                                            Value=("Value", "sum"))
+    # list configured assets that no account holds, so a zero is visible rather than absent
+    configured = {c["nativeAsset"].upper() for c in chains if c.get("nativeAsset")}
+    configured |= {t["symbol"].upper() for c in chains for t in c.get("tokens", []) if t.get("symbol")}
+    for asset in sorted(configured - set(byAsset.index)):
+        byAsset.loc[asset] = [0.0, prices.get(asset), 0.0]
+    byAsset = byAsset.sort_values("Value", ascending=False)
+    print("\nAssets by value:")
+    print(byAsset.assign(Balance=byAsset["Balance"].map("{:,.2f}".format),
+                         Value=byAsset["Value"].map("${:,.2f}".format)).to_string())
 
-    # Append zero-balance assets defined in chains but absent from all accounts
-    allChainAssets = set()
-    for chain in chains:
-        if chain.get("nativeAsset"):
-            allChainAssets.add(chain["nativeAsset"].upper())
-        for token in chain.get("tokens", []):
-            if token.get("symbol"):
-                allChainAssets.add(token["symbol"].upper())
-    zeroAssets = allChainAssets - set(valueByAsset.index.str.upper())
-    if zeroAssets:
-        priceIndex = prices.set_index("Asset")["Price"]
-        zeroRows = pd.DataFrame(
-            {"Balance": 0.0, "Value": 0.0, "Price": [priceIndex.get(a) for a in sorted(zeroAssets)]},
-            index=sorted(zeroAssets),
-        )
-        zeroRows.index.name = "Asset"
-        valueByAsset = pd.concat([valueByAsset, zeroRows])
+    print("\nAccounts by total value:")
+    print(byAddress.map("${:,.2f}".format).to_string())
 
-    valueByAsset["Fiat value"] = valueByAsset.Value.map('${:,.2f}'.format)
-    valueByAsset["Total balance"] = valueByAsset.Balance.map('{:,.2f}'.format)
-
-    print("Assets by value:")
-    print(valueByAsset.sort_values(by="Value", ascending=False)[["Total balance", "Price", "Fiat value"]].to_string())
-
-    valueByAccount = pd.DataFrame(accountBalances.groupby("Address").sum())
-    valueByAccount.drop(["Price"], axis=1, inplace=True)
-    valueByAccount["Fiat value"] = valueByAccount.Value.map('${:,.2f}'.format)
-
-    print("Accounts by total balance value:")
-    print(valueByAccount.sort_values(by="Value", ascending=False)[["Fiat value"]].to_string())
-
-    missing_assets = np.sort(accountBalances[accountBalances.Price.isna()].Asset.unique())
-    print(f"\nTotal portfolio value (priced assets only): ${accountBalances.Balance.mul(accountBalances.Price).sum():,.2f}")
-
-    if len(missing_assets) > 0:
-        print(f"\nWARNING: no price for {len(missing_assets)} asset(s) — total is likely higher: {missing_assets}")
+    print(f"\nTotal portfolio value (priced assets only): ${balances['Value'].sum():,.2f}")
+    unpriced = sorted(balances.loc[balances["Price"].isna(), "Asset"].unique())
+    if unpriced:
+        print(f"WARNING: no price for {len(unpriced)} asset(s), the total is incomplete: {unpriced}")
 
     if storeCsv:
-        print("storing CSV files...")
-        accountBalances.sort_values(by="Value", ascending=False).to_csv("data/account_balances.csv", index=False)
-        accountBalances.groupby("Asset").agg({"Balance": "sum", "Value": "sum", "Price": "first"}).sort_values(by="Value", ascending=False)[["Balance", "Price", "Value"]].to_csv("data/asset_values.csv")
-        accountBalances.groupby("Address").sum().sort_values(by="Value", ascending=False)[["Value"]].to_csv("data/address_values.csv")
-
-    return accountBalances
-
+        balances.to_csv(os.path.join(outputDir, "account_balances.csv"), index=False)
+        byAsset.to_csv(os.path.join(outputDir, "asset_values.csv"))
+        byAddress.to_csv(os.path.join(outputDir, "address_values.csv"))
+        print(f"tables written to {outputDir}/")
+    return balances

@@ -1,457 +1,210 @@
-"""
-accounting.py — step-by-step EOY portfolio accounting
+"""End-of-year (EOY) portfolio accounting, one step at a time.
 
-Usage:
-    python accounting.py <year> <steps> [--profile <name>]
+    python accounting.py <year> <steps> [--profile NAME]
 
-Steps (run in the order listed):
-    step0  — check chain RPC connectivity and archive support
-    step1  — derive HD wallet accounts from secrets.json
-    step2  — find EOY block numbers for every chain
-    step3  — load on-chain token metadata (decimals, symbols)
-    step4  — load EOY balances for every account (slow, hits RPCs)
-    step5  — fetch EOY asset prices
-    step6  — print portfolio analysis
+Steps, in pipeline order (each reads the files the earlier steps wrote):
+    0  check that every chain's RPC works and is an archive node
+    1  derive accounts from secrets.json           -> data/accounts-blank.json
+    2  find the EOY block number of every chain    -> data/chains-<year>-blocks.json
+    3  load token decimals from the chains          -> data/chains-<year>-tokens.json
+    4  load EOY balances of every account (slow)    -> data/accounts-<year>.json
+    5  fetch EOY asset prices                       -> data/assetPrices-<year>.csv
+    6  print the portfolio and write summary CSVs   -> data/*_values.csv
 
 Examples:
-    python accounting.py 2024 1-6                    # full pipeline
-    python accounting.py 2024 5,6                    # re-run prices + analysis only
-    python accounting.py 2024 0                      # just check RPC health
-    python accounting.py 2024 6 --profile corporate  # analyse corporate accounts only
+    python accounting.py 2024 1-6                    full pipeline
+    python accounting.py 2024 5,6                    prices and analysis again
+    python accounting.py 2024 6 --profile corporate  analysis for the "corporate" accounts
 """
 
 import argparse
-import json
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import account0000r
 import analyz0000r
 from load0000rs import ethBalance, metaLoad0000rErc20
-from priceLoad0000rs import loadAssetPrices, collectSymbols, eoyTimestamp, exportPrices
-from priceLoad0000rs.cryptocompare import load0000r as CryptoCompare
-from priceLoad0000rs.coingecko   import load0000r as CoinGecko
-from priceLoad0000rs.aliases     import load0000r as Aliases
-from priceLoad0000rs.manual      import load0000r as Manual
-from utils import ts_to_utc, _is_non_archive_error
+from priceLoad0000rs import collectSymbols, defaultPriceLoaders, eoyTimestamp, exportPrices, loadAssetPrices
 from rpc import build_web3
+from utils import is_non_archive_error, ts_to_utc
+
+SECRETS_FILE = "secrets.json"
+CHAINS_FILE = "data/chains.json"
+MANUAL_PRICES_FILE = "data/assetPrices-manual.csv"
+ACCOUNTS_BLANK_FILE = "data/accounts-blank.json"
 
 
-# ─── Configuration ────────────────────────────────────────────────────────────
+class Context:
+    """The year being processed, the profile filter, and the files of that year."""
 
-# Input files (edit to match your setup)
-SECRETS_FILE       = "secrets.json"
-CHAINS_FILE        = "data/chains.json"
-MANUAL_PRICES_FILE = "data/assetPrices-manual.csv"   # hand-maintained prices for obscure tokens
-
-# Intermediate and output files (auto-named by year; set in _init_paths)
-ACCOUNTS_BLANK_FILE = None
-CHAINS_BLOCKS_FILE  = None
-CHAINS_TOKENS_FILE  = None
-ACCOUNTS_FILE       = None
-PRICES_FILE         = None
+    def __init__(self, year, profile):
+        self.year = year
+        self.profile = profile
+        self.chainsBlocksFile = f"data/chains-{year}-blocks.json"
+        self.chainsTokensFile = f"data/chains-{year}-tokens.json"
+        self.accountsFile = f"data/accounts-{year}.json"
+        self.pricesFile = f"data/assetPrices-{year}.csv"
 
 
-def _init_paths(year):
-    global ACCOUNTS_BLANK_FILE, CHAINS_BLOCKS_FILE, CHAINS_TOKENS_FILE
-    global ACCOUNTS_FILE, PRICES_FILE
-    ACCOUNTS_BLANK_FILE = "data/accounts-blank.json"
-    CHAINS_BLOCKS_FILE  = f"data/chains-{year}-blocks.json"
-    CHAINS_TOKENS_FILE  = f"data/chains-{year}-tokens.json"
-    ACCOUNTS_FILE       = f"data/accounts-{year}.json"
-    PRICES_FILE         = f"data/assetPrices-{year}.csv"
-
-
-# Derived tokens that share the price of their underlying asset.
-# Add any project-specific mappings here.
-PRICE_ALIASES = {
-    "XHOPR":   "HOPR",
-    "WXHOPR":  "HOPR",
-    "STKAAVE": "AAVE",
-    "STETH":   "ETH",
-    "WETH":    "ETH",
-    "WBTC":    "BTC",
-    "XDAI":    "DAI",
-    "USDC.E":  "USDC",
-}
-
-
-PROFILE = "personal"   # set via --profile CLI arg
-
-
-def _require_file(path, producing_step):
-    """Exit with a helpful message if a required file is missing."""
+def requireFile(path, hint):
     if not os.path.exists(path):
-        print(f"ERROR: required file not found: {path}")
-        print(f"  → Run {producing_step} first to generate it.")
-        sys.exit(1)
+        sys.exit(f"ERROR: required file not found: {path}\n  {hint}")
 
 
-def _filter_by_profile(accounts):
-    """Return accounts that match PROFILE or have no profile set."""
-    filtered = [a for a in accounts if a.get("profile", PROFILE) == PROFILE]
-    total = len(accounts)
-    kept  = len(filtered)
-    if kept < total:
-        print(f"  profile={PROFILE}: selected {kept}/{total} accounts (skipped {total - kept})")
-    return filtered
-
-
-# ─── Steps ────────────────────────────────────────────────────────────────────
-
-def _check_single_chain(chain):
-    """Worker: probe one chain for connectivity and archive capability.
-    Returns (connectivity_ok, archive_ok, detail_message).
-    Runs in a thread — must not print directly.
-    """
-    name = chain["name"]
-
+def checkChain(chain):
+    """(reachable, archive, message) for one chain. Runs in a thread, so it must not print."""
     try:
-        w3     = build_web3(chain)
+        w3 = build_web3(chain)
         latest = w3.eth.get_block("latest")
     except Exception as e:
-        return False, False, f"CONNECTIVITY FAILED — {e}"
-
-    conn_msg = f"connectivity OK — latest block {latest.number} ({ts_to_utc(latest.timestamp)})"
-
+        return False, False, f"CONNECTIVITY FAILED: {e}"
+    msg = f"connectivity OK, latest block {latest.number} ({ts_to_utc(latest.timestamp)})"
     try:
         w3.eth.get_balance("0x0000000000000000000000000000000000000000", 1)
-        return True, True, conn_msg
+        return True, True, msg
     except Exception as e:
-        if _is_non_archive_error(e):
-            arch_msg = "NOT an archive node"
-        else:
-            arch_msg = f"archive check error — {e}"
-        return True, False, f"{conn_msg} | {arch_msg}"
+        detail = "NOT an archive node" if is_non_archive_error(e) else f"archive check error: {e}"
+        return True, False, f"{msg} | {detail}"
 
 
-def step0_check_chains():
-    """Verify that every chain in CHAINS_FILE has a working RPC provider
-    with archive capabilities.
-
-    All chains are probed in parallel.  Each request is logged the moment it
-    is dispatched; results are printed as they arrive.
-
-    Checks two things per chain:
-      1. Basic connectivity — can the RPC be reached and return the latest block?
-      2. Archive capability — can it serve historical state (required for step4)?
-    """
-    _require_file(CHAINS_FILE, "step0 requires chains.json — create it from data/chains-sample.json")
-    chains = json.load(open(CHAINS_FILE))
+def step0_check_chains(ctx):
+    requireFile(CHAINS_FILE, "create it from data/chains-sample.json")
+    chains = account0000r.readJson(CHAINS_FILE)
     print(f"step0: checking {len(chains)} chain(s) from {CHAINS_FILE}")
-
-    failed_connectivity = []
-    failed_archive      = []
-
-    with ThreadPoolExecutor(max_workers=len(chains)) as executor:
-        futures = {}
-        for chain in chains:
-            print(f"  [{chain['name']}] sending request...")
-            futures[executor.submit(_check_single_chain, chain)] = chain["name"]
-
+    unreachable, nonArchive = [], []
+    with ThreadPoolExecutor(max_workers=len(chains)) as pool:
+        futures = {pool.submit(checkChain, c): c["name"] for c in chains}
         for future in as_completed(futures):
             name = futures[future]
-            conn_ok, arch_ok, msg = future.result()
+            reachable, archive, msg = future.result()
             print(f"  [{name}] {msg}")
-            if not conn_ok:
-                failed_connectivity.append(name)
-            elif not arch_ok:
-                failed_archive.append(name)
-
-    # ── summary ───────────────────────────────────────────────────────────────
-    print()
-    if not failed_connectivity and not failed_archive:
-        print(f"step0: all {len(chains)} chain(s) passed\n")
-        return
-
-    if failed_connectivity:
-        print(f"ERROR: {len(failed_connectivity)} chain(s) unreachable — step4 will not work for these:")
-        for name in failed_connectivity:
-            print(f"  - {name}")
-        print(f"  → Check the 'api' URL for these chains in {CHAINS_FILE}\n")
-
-    if failed_archive:
-        print(f"WARNING: {len(failed_archive)} chain(s) have non-archive RPC providers — step4 requires archive nodes:")
-        for name in failed_archive:
-            print(f"  - {name}")
-        print(f"  → Replace the 'api' value for these chains in {CHAINS_FILE}")
-        print(f"    with an archive endpoint (e.g. Alchemy, Infura, or a self-hosted archive node)\n")
+            if not reachable:
+                unreachable.append(name)
+            elif not archive:
+                nonArchive.append(name)
+    if unreachable:
+        print(f"\nERROR: unreachable: {unreachable}. Fix their 'api' URLs in {CHAINS_FILE}.")
+    if nonArchive:
+        print(f"\nWARNING: not archive nodes: {nonArchive}. Step 4 needs archive endpoints for them.")
+    if not unreachable and not nonArchive:
+        print(f"step0: all {len(chains)} chain(s) passed")
 
 
-def step1_derive_accounts():
-    """Derive HD wallet accounts from secrets.json and save to ACCOUNTS_BLANK_FILE.
-
-    Writes plain address/index/mnemonic records with no balance data.  This
-    file is the stable seed used by step4 — re-run step1 only when adding
-    mnemonics or changing the number of derived accounts.
-
-    If you manage accounts manually rather than from a mnemonic, skip this
-    step and write a JSON list directly to ACCOUNTS_BLANK_FILE instead
-    (see README for the required format).
-    """
-    _require_file(SECRETS_FILE, "step1 requires secrets.json — create it from EXAMPLE-secrets.json")
-    secrets  = json.load(open(SECRETS_FILE))
-    accounts = account0000r.accountsFromSecrets(secrets)
-
+def step1_derive_accounts(ctx):
+    """Writes address/index/mnemonic records without balances. Re-run only when secrets
+    change. To manage accounts by hand, write ACCOUNTS_BLANK_FILE yourself instead."""
+    requireFile(SECRETS_FILE, "create it from EXAMPLE-secrets.json")
+    accounts = account0000r.accountsFromSecrets(account0000r.readJson(SECRETS_FILE))
     account0000r.writeJson(accounts, ACCOUNTS_BLANK_FILE)
     print(f"step1: {len(accounts)} accounts written to {ACCOUNTS_BLANK_FILE}")
 
 
-def step2_find_eoy_blocks():
-    """Look up the block number closest to EOY midnight for every chain.
-
-    Reads CHAINS_FILE, performs a binary search on each chain's RPC, and
-    writes the results to CHAINS_BLOCKS_FILE.  Only needs to run once per year.
-    The resulting file is the input for step3 and step4.
-    """
-    _require_file(CHAINS_FILE, "step2 requires chains.json — create it from data/chains-sample.json")
-    chains    = json.load(open(CHAINS_FILE))
-    timestamp = eoyTimestamp(EOY_YEAR)
-
-    chains = account0000r.getBlockNoFromTimestamp(chains, timestamp)
-
-    account0000r.writeJson(chains, CHAINS_BLOCKS_FILE)
-    print(f"step2: EOY block numbers written to {CHAINS_BLOCKS_FILE}")
+def step2_find_eoy_blocks(ctx):
+    requireFile(CHAINS_FILE, "create it from data/chains-sample.json")
+    chains = account0000r.getBlockNoFromTimestamp(account0000r.readJson(CHAINS_FILE), eoyTimestamp(ctx.year))
+    account0000r.writeJson(chains, ctx.chainsBlocksFile)
+    print(f"step2: EOY block numbers written to {ctx.chainsBlocksFile}")
 
 
-def step3_load_token_metadata():
-    """Fetch on-chain token metadata (decimals, canonical symbol) for all tokens
-    listed in CHAINS_BLOCKS_FILE and save to CHAINS_TOKENS_FILE.
-
-    Re-run whenever you add a new token to chains.json.  For subsequent runs
-    the saved CHAINS_TOKENS_FILE already contains the metadata so you can pass
-    loadChainData=False to generateTokenLoad0000rs to skip the RPC calls.
-    """
-    _require_file(CHAINS_BLOCKS_FILE, "step2 (finds EOY block numbers)")
-    chains   = json.load(open(CHAINS_BLOCKS_FILE))
-    metaErc20 = metaLoad0000rErc20.load0000r()
-
-    _erc20Loaders, chains = account0000r.generateTokenLoad0000rs(
-        chains, metaErc20, loadChainData=True, atBlock=True
-    )
-
-    account0000r.writeJson(chains, CHAINS_TOKENS_FILE)
-    print(f"step3: token metadata written to {CHAINS_TOKENS_FILE}")
+def step3_load_token_metadata(ctx):
+    """Re-run after adding tokens to chains.json (and step 2, which copies the token list)."""
+    requireFile(ctx.chainsBlocksFile, "run step 2 first")
+    chains = account0000r.readJson(ctx.chainsBlocksFile)
+    _, chains = account0000r.generateTokenLoad0000rs(chains, metaLoad0000rErc20.load0000r(),
+                                                     loadChainData=True, atBlock=True)
+    account0000r.writeJson(chains, ctx.chainsTokensFile)
+    print(f"step3: token metadata written to {ctx.chainsTokensFile}")
 
 
-def step4_load_eoy_balances():
-    """Load native coin and ERC-20 balances at the EOY block for every account
-    on every chain and save the enriched account list to ACCOUNTS_FILE.
-
-    Always reads ACCOUNTS_BLANK_FILE as the canonical account list and merges
-    in cached balances from ACCOUNTS_FILE (if it exists).  This means adding
-    or removing accounts in the blank file takes effect on the next run, while
-    already-fetched balances are preserved.
-
-    To force a full re-fetch, delete ACCOUNTS_FILE and re-run.
-    """
-    _require_file(ACCOUNTS_BLANK_FILE, "step1 (derives accounts)")
-    _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
-    accounts = json.load(open(ACCOUNTS_BLANK_FILE))
-
-    if os.path.exists(ACCOUNTS_FILE):
-        cached = json.load(open(ACCOUNTS_FILE))
-        cached_by_addr = {a["address"].lower(): a for a in cached}
-        merged = 0
-        for account in accounts:
-            prev = cached_by_addr.get(account["address"].lower())
-            if prev and prev.get("chains"):
-                account["chains"] = prev["chains"]
-                merged += 1
-        print(f"step4: {len(accounts)} accounts from {ACCOUNTS_BLANK_FILE}, {merged} with cached balances from {ACCOUNTS_FILE}")
-    else:
-        print(f"step4: {len(accounts)} accounts from {ACCOUNTS_BLANK_FILE} (no cached balances)")
-
-    chains    = json.load(open(CHAINS_TOKENS_FILE))
-    metaErc20 = metaLoad0000rErc20.load0000r()
-
-    erc20Loaders, chains = account0000r.generateTokenLoad0000rs(
-        chains, metaErc20, loadChainData=False, atBlock=True
-    )
-
+def step4_load_eoy_balances(ctx):
+    """Always starts from ACCOUNTS_BLANK_FILE and merges in balances already stored in
+    the year's accounts file, so only missing balances are fetched. Delete the accounts
+    file to fetch everything again."""
+    requireFile(ACCOUNTS_BLANK_FILE, "run step 1 first")
+    requireFile(ctx.chainsTokensFile, "run step 3 first")
+    accounts = account0000r.readJson(ACCOUNTS_BLANK_FILE)
+    if os.path.exists(ctx.accountsFile):
+        merged = account0000r.mergeCachedChains(accounts, account0000r.readJson(ctx.accountsFile))
+        print(f"step4: {len(accounts)} accounts, {merged} with cached balances from {ctx.accountsFile}")
+    chains = account0000r.readJson(ctx.chainsTokensFile)
+    erc20Loaders, chains = account0000r.generateTokenLoad0000rs(chains, metaLoad0000rErc20.load0000r(),
+                                                                loadChainData=False, atBlock=True)
     loaders = [ethBalance.load0000r(atBlock=True, skipAnalysisIfEntryExists=True), *erc20Loaders]
     accounts, errors = account0000r.loadAccountMetadata(loaders, accounts, chains)
-
-    account0000r.writeJson(accounts, ACCOUNTS_FILE)
-    print(f"step4: balances written to {ACCOUNTS_FILE}")
-    if errors:
-        print(f"  {len(errors)} errors encountered (see above)")
+    account0000r.writeJson(accounts, ctx.accountsFile)
+    print(f"step4: balances written to {ctx.accountsFile}" + (f", {len(errors)} errors (see above)" if errors else ""))
 
 
-def step5_load_eoy_prices():
-    """Fetch EOY closing prices for every asset that appears in ACCOUNTS_FILE
-    and save them to PRICES_FILE.
-
-    If PRICES_FILE already exists, cached prices are kept and only missing
-    symbols are fetched.  To force a full re-fetch, delete PRICES_FILE first.
-
-    Loader priority: CryptoCompare → CoinGecko → Aliases → Manual CSV.
-    Add any assets that APIs cannot find to MANUAL_PRICES_FILE as Asset,Price
-    rows and re-run this step.
-    """
-    _require_file(ACCOUNTS_FILE, "step4 (loads EOY balances)")
-    _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
-    accounts = json.load(open(ACCOUNTS_FILE))
-    chains   = json.load(open(CHAINS_TOKENS_FILE))
-
-    symbols = collectSymbols(accounts, chains)
-
-    # merge cached prices from a previous run
-    cached_prices: dict[str, float] = {}
-    if os.path.exists(PRICES_FILE):
-        import csv as _csv
-        with open(PRICES_FILE, newline="") as f:
-            reader = _csv.DictReader(f, skipinitialspace=True)
-            for row in reader:
-                row = {k.strip(): v.strip() for k, v in row.items()}
-                sym = row.get("Asset", "").upper()
-                raw = row.get("Price", "")
-                if sym and raw:
-                    try:
-                        cached_prices[sym] = float(raw)
-                    except ValueError:
-                        pass
-
-    missing = [s for s in symbols if s not in cached_prices]
-
-    if missing:
-        print(f"step5: {len(symbols)} symbols total, {len(cached_prices)} cached, {len(missing)} to fetch: {missing}")
-        loaders = [
-            CryptoCompare(),
-            CoinGecko(),
-            Aliases(PRICE_ALIASES),
-            Manual(MANUAL_PRICES_FILE),
-        ]
-        new_prices = loadAssetPrices(missing, eoyTimestamp(EOY_YEAR), loaders)
-        cached_prices.update(new_prices)
-    else:
-        print(f"step5: all {len(symbols)} symbols already cached in {PRICES_FILE}")
-
-    exportPrices(cached_prices, PRICES_FILE)
-    print(f"step5: {len(cached_prices)} prices written to {PRICES_FILE}")
+def step5_load_eoy_prices(ctx):
+    """Prices already in the year's price file are kept; only new symbols hit the APIs.
+    Delete the price file to fetch everything again. Add assets the APIs do not know to
+    MANUAL_PRICES_FILE."""
+    requireFile(ctx.accountsFile, "run step 4 first")
+    requireFile(ctx.chainsTokensFile, "run step 3 first")
+    symbols = collectSymbols(account0000r.readJson(ctx.accountsFile), account0000r.readJson(ctx.chainsTokensFile))
+    loaders = defaultPriceLoaders(MANUAL_PRICES_FILE, cacheCsv=ctx.pricesFile)
+    prices = loadAssetPrices(symbols, eoyTimestamp(ctx.year), loaders)
+    exportPrices(prices, ctx.pricesFile)
+    print(f"step5: {len(prices)} of {len(symbols)} prices written to {ctx.pricesFile}")
 
 
-def step6_portfolio_analysis():
-    """Print a full portfolio overview and write summary CSVs to data/.
-
-    Reads balances from ACCOUNTS_FILE and prices from PRICES_FILE.
-    Safe to re-run at any time without touching RPC endpoints or price APIs.
-    """
-    _require_file(ACCOUNTS_FILE, "step4 (loads EOY balances)")
-    _require_file(CHAINS_TOKENS_FILE, "step3 (loads token metadata)")
-    _require_file(PRICES_FILE, "step5 (fetches EOY prices)")
-    all_accounts = json.load(open(ACCOUNTS_FILE))
-
-    profiles = sorted({a.get("profile", "(none)") for a in all_accounts})
-    print(f"step6: profiles in {ACCOUNTS_FILE}: {', '.join(profiles)}")
-
-    accounts = _filter_by_profile(all_accounts)
-    chains   = json.load(open(CHAINS_TOKENS_FILE))
-
-    analyz0000r.portfolioValue(
-        accounts, chains,
-        atBlock=True,
-        assetPricesCsv=PRICES_FILE,
-    )
+def step6_portfolio_analysis(ctx):
+    """Reads only local files, safe to re-run at any time."""
+    requireFile(ctx.accountsFile, "run step 4 first")
+    requireFile(ctx.chainsTokensFile, "run step 3 first")
+    requireFile(ctx.pricesFile, "run step 5 first")
+    accounts = account0000r.readJson(ctx.accountsFile)
+    print(f"step6: profiles in {ctx.accountsFile}: {sorted({a.get('profile', '(none)') for a in accounts})}")
+    accounts = account0000r.filterByProfile(accounts, ctx.profile)
+    chains = account0000r.readJson(ctx.chainsTokensFile)
+    analyz0000r.portfolioValue(accounts, chains, atBlock=True, assetPricesCsv=ctx.pricesFile)
 
 
-# ─── CLI ──────────────────────────────────────────────────────────────────────
-
-STEPS = {
-    "step0": ("check chain RPCs",            step0_check_chains),
-    "step1": ("derive accounts",             step1_derive_accounts),
-    "step2": ("find EOY block numbers",      step2_find_eoy_blocks),
-    "step3": ("load token metadata",         step3_load_token_metadata),
-    "step4": ("load EOY balances (slow)",    step4_load_eoy_balances),
-    "step5": ("fetch EOY prices",            step5_load_eoy_prices),
-    "step6": ("portfolio analysis",          step6_portfolio_analysis),
-}
+STEPS = [
+    ("check chain RPCs", step0_check_chains),
+    ("derive accounts", step1_derive_accounts),
+    ("find EOY block numbers", step2_find_eoy_blocks),
+    ("load token metadata", step3_load_token_metadata),
+    ("load EOY balances (slow)", step4_load_eoy_balances),
+    ("fetch EOY prices", step5_load_eoy_prices),
+    ("portfolio analysis", step6_portfolio_analysis),
+]
 
 
-STEP_IDS = sorted(STEPS.keys())                    # ["step0", "step1", ...]
-MAX_STEP = len(STEP_IDS) - 1
-
-
-def _parse_steps(raw: str) -> list[str]:
-    """Parse a step specifier like "0-3,5" into ["step0","step1","step2","step3","step5"].
-
-    Accepted tokens (comma-separated, spaces are ignored):
-        3       → step3
-        1-4     → step1, step2, step3, step4
-    """
-    nums = set()
+def parseSteps(raw):
+    """"0-3,5" -> [0, 1, 2, 3, 5]. Raises ValueError for anything outside 0..len(STEPS)-1."""
+    steps = set()
     for token in raw.replace(" ", "").split(","):
         if not token:
             continue
-        if "-" in token:
-            lo, hi = token.split("-", 1)
-            lo, hi = int(lo), int(hi)
-        else:
-            lo = hi = int(token)
-        if lo > hi or lo < 0 or hi > MAX_STEP:
-            print(f"ERROR: invalid step range '{token}' — valid steps are 0..{MAX_STEP}")
-            sys.exit(1)
-        nums.update(range(lo, hi + 1))
-    return [f"step{n}" for n in sorted(nums)]
+        lo, _, hi = token.partition("-")
+        lo, hi = int(lo), int(hi or lo)
+        if not 0 <= lo <= hi < len(STEPS):
+            raise ValueError(f"invalid step range '{token}', valid steps are 0..{len(STEPS) - 1}")
+        steps.update(range(lo, hi + 1))
+    return sorted(steps)
 
 
 def main():
-    step_list = "\n".join(f"  {n}  — {desc}" for n, (desc, _) in STEPS.items())
-
     parser = argparse.ArgumentParser(
-        description="Step-by-step EOY portfolio accounting.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=f"available steps:\n{step_list}\n\nexamples:\n"
-               f"  python accounting.py 2024 1-6        # full pipeline\n"
-               f"  python accounting.py 2024 5,6        # re-run prices + analysis\n"
-               f"  python accounting.py 2024 0          # just check RPC health\n"
-               f"  python accounting.py 2024 1-3,5      # steps 1, 2, 3 and 5",
-    )
-    parser.add_argument("year", type=int, nargs="?", default=None,
-                        help="EOY year to process (e.g. 2024)")
-    parser.add_argument(
-        "steps", nargs="?", default=None, metavar="steps",
-        help="steps to run, e.g. 0-6, 1,3,5, or 4-6  (valid: 0..{})".format(MAX_STEP),
-    )
-    parser.add_argument(
-        "--profile", default="personal",
-        help="only include accounts matching this profile in analysis (default: personal)",
-    )
-
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("year", type=int, help="year to account for, e.g. 2024")
+    parser.add_argument("steps", help="steps to run, e.g. 1-6 or 0 or 1,3,5")
+    parser.add_argument("--profile", default="personal",
+                        help="only analyse accounts with this profile (default: personal); "
+                             "accounts without a profile are always included")
     args = parser.parse_args()
-
-    if args.year is None:
-        parser.print_help()
-        sys.exit(1)
-
-    if not args.steps:
-        parser.print_help()
-        print(f"\nERROR: no steps specified.")
-        print(f"  e.g.  python accounting.py {args.year} 1-6")
-        sys.exit(1)
-
     try:
-        step_names = _parse_steps(args.steps)
-    except ValueError:
-        parser.print_help()
-        print(f"\nERROR: could not parse step specifier '{args.steps}'.")
-        print(f"  Use comma-separated numbers or ranges, e.g. 0-3,5")
-        sys.exit(1)
-
-    _init_paths(args.year)
-
-    global EOY_YEAR, PROFILE
-    EOY_YEAR = args.year
-    PROFILE  = args.profile
-
-    for step_name in step_names:
-        desc, fn = STEPS[step_name]
-        print(f"\n{'─' * 60}")
-        print(f"  {step_name}: {desc}  (year={args.year})")
-        print(f"{'─' * 60}\n")
-        fn()
-
-    print(f"\nDone — ran {len(step_names)} step(s).")
+        steps = parseSteps(args.steps)
+    except ValueError as e:
+        parser.error(str(e))
+    ctx = Context(args.year, args.profile)
+    for n in steps:
+        desc, fn = STEPS[n]
+        print(f"\n{'-' * 60}\n  step {n}: {desc} (year={ctx.year})\n{'-' * 60}\n")
+        fn(ctx)
+    print(f"\nDone, ran {len(steps)} step(s).")
 
 
 if __name__ == "__main__":
