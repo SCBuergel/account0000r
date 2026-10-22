@@ -38,32 +38,14 @@ The stored account records are then priced (`priceLoad0000rs/`) and summarised
 
 ## Install
 
-Python 3.11 is required (pandas 2.0 has no wheels for newer versions). With
-[pyenv](https://github.com/pyenv/pyenv-installer):
+Python 3.11 or newer. In the repository root:
 
 ```
-pyenv install 3.11
-pyenv local 3.11
-pip install -r requirements.txt
-```
-
-Optional, on a vanilla Debian. Debian 12 ships Python 3.11, so a venv is enough:
-
-```
-sudo apt install -y python3 python3-pip python3-venv git
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Newer Debian ships a newer Python; get 3.11 through pyenv instead:
-
-```
-sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
-  libsqlite3-dev libffi-dev liblzma-dev curl git
-curl https://pyenv.run | bash          # then add pyenv to your shell as it tells you
-pyenv install 3.11 && pyenv local 3.11
-pip install -r requirements.txt
-```
+On a vanilla Debian, first `sudo apt install -y python3 python3-pip python3-venv git`.
 
 ## Configure
 
