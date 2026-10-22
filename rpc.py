@@ -6,9 +6,15 @@ error response) the provider moves to the next endpoint and retries, wrapping ar
 the last one. The position is kept per chain in a module-level cursor so that every
 Web3 instance built for the same chain, from any thread, continues from the same endpoint.
 
-Always connect with build_web3(chain) rather than Web3(HTTPProvider(url)).
+Endpoints of one chain may be mixed archive and non-archive: a non-archive endpoint answers
+a historical query with an error, which moves the cursor on to the next endpoint.
+
+Always connect with build_web3(chain) rather than Web3(HTTPProvider(url)). It caches one
+Web3 per chain and thread; a provider must not be shared between threads because it
+changes its endpoint_uri while rotating.
 """
 
+import threading
 import time
 
 from web3 import Web3
@@ -19,6 +25,7 @@ import diagnostics
 from utils import is_non_archive_error
 
 _CURSORS = {}  # chain name -> index of the active endpoint
+_LOCAL = threading.local()  # .web3s: (chain name, endpoints) -> Web3, one cache per thread
 
 
 def checksum(address):
@@ -37,6 +44,11 @@ def endpoints_for_chain(chain):
     return endpoints
 
 
+def _errorBody(e):
+    """The response text behind a requests HTTPError, or "" for any other exception."""
+    return getattr(getattr(e, "response", None), "text", None) or ""
+
+
 class FailoverHTTPProvider(HTTPProvider):
     """HTTPProvider that rotates through `endpoints`, sharing its position via `key`."""
 
@@ -47,10 +59,10 @@ class FailoverHTTPProvider(HTTPProvider):
         super().__init__(self._current_uri(), **kwargs)
 
     def _current_uri(self):
-        return self._endpoints[_CURSORS[self._key] % len(self._endpoints)]
+        return self._endpoints[_CURSORS.get(self._key, 0) % len(self._endpoints)]
 
     def _rotate(self):
-        _CURSORS[self._key] = (_CURSORS[self._key] + 1) % len(self._endpoints)
+        _CURSORS[self._key] = (_CURSORS.get(self._key, 0) + 1) % len(self._endpoints)
         return self._current_uri()
 
     def make_request(self, method, params):
@@ -59,9 +71,13 @@ class FailoverHTTPProvider(HTTPProvider):
         Both a transport failure and a JSON-RPC error response move to the next
         endpoint: the read-only calls this tool makes never legitimately fail, so an
         error means the endpoint is unusable (no archive data, API key required, rate
-        limited). If every endpoint fails, an error response is returned, or the last
-        exception raised, so that utils.retry can classify it. A "not an archive node"
-        response is preferred over other errors so that it is reported and not retried.
+        limited). If every endpoint fails, what is handed to utils.retry decides what
+        happens next, in this order:
+          1. a transport failure (connection error, HTTP 429/5xx) is raised: an archive
+             endpoint that is down right now deserves a retry;
+          2. a "not an archive node" response is returned: retry raises it as
+             NonArchiveRpcError, which is reported once instead of retried;
+          3. any other error response is returned.
         """
         lastError = lastResponse = nonArchiveResponse = None
         for _ in self._endpoints:
@@ -70,7 +86,13 @@ class FailoverHTTPProvider(HTTPProvider):
             try:
                 response = super().make_request(method, params)
             except Exception as e:
-                lastError, reason = e, type(e).__name__
+                body = _errorBody(e)
+                if is_non_archive_error(body):
+                    # publicnode refuses archive requests with HTTP 403 and a JSON-RPC body
+                    response, reason = {"error": {"code": -32000, "message": body[:200]}}, body[:100]
+                    lastResponse, nonArchiveResponse = response, nonArchiveResponse or response
+                else:
+                    lastError, reason = e, type(e).__name__
             else:
                 if "error" not in response:
                     diagnostics.recordCall(self.endpoint_uri, time.time() - started)
@@ -82,17 +104,23 @@ class FailoverHTTPProvider(HTTPProvider):
             if len(self._endpoints) > 1:
                 print(f"[rpc failover] {self._key}: {self.endpoint_uri} failed ({reason}) "
                       f"-> switching to {self._rotate()}")
-        if lastResponse is not None:
-            return nonArchiveResponse or lastResponse
-        raise lastError
+        if lastError is not None:
+            raise lastError
+        return nonArchiveResponse or lastResponse
 
 
 def build_web3(chain):
     """A Web3 for `chain` (a dict from chains.json) with endpoint failover.
 
     The POA middleware is injected so that POA chains (Gnosis, Polygon, BNB, Optimism)
-    decode block headers; it is harmless on other chains.
+    decode block headers; it is harmless on other chains. The instance is cached per
+    thread: building one costs a few milliseconds, which adds up over thousands of tasks.
     """
-    w3 = Web3(FailoverHTTPProvider(endpoints_for_chain(chain), chain["name"]))
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-    return w3
+    endpoints = endpoints_for_chain(chain)
+    cache = _LOCAL.__dict__.setdefault("web3s", {})
+    key = (chain["name"], tuple(endpoints))
+    if key not in cache:
+        w3 = Web3(FailoverHTTPProvider(endpoints, chain["name"]))
+        w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        cache[key] = w3
+    return cache[key]

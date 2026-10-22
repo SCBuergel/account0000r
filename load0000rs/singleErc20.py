@@ -1,5 +1,7 @@
 """Balance of one ERC-20 token on one chain. Built by account0000r.generateTokenLoad0000rs."""
 
+import threading
+
 from load0000rs.base import baseLoad0000r, targetBlock
 from rpc import build_web3, checksum
 from utils import retry
@@ -24,6 +26,7 @@ class load0000r(baseLoad0000r):
         self._atBlock = atBlock
         self._metaLoad0000r = metaLoad0000r
         self._deployedAt = {}  # block -> whether the token contract has code there
+        self._deployedLock = threading.Lock()
 
     def name(self):
         suffix = " atBlock" if self._atBlock else ""
@@ -35,8 +38,11 @@ class load0000r(baseLoad0000r):
     def _contract(self, web3):
         return web3.eth.contract(address=checksum(self._token["address"]), abi=ERC20_ABI)
 
+    def appliesTo(self, chain):
+        return chain["name"] == self._chain["name"]
+
     def analyze(self, account, chain):
-        if chain["name"] != self._chain["name"]:
+        if not self.appliesTo(chain):
             return None
         block = targetBlock(chain, self._atBlock)
         web3 = build_web3(chain)
@@ -53,11 +59,14 @@ class load0000r(baseLoad0000r):
     def _isDeployed(self, web3, block):
         """Whether the token contract has code at `block`; balanceOf on a contract that
         did not exist yet would revert. Depends on the token and block only, not on the
-        account, so it is fetched once per loader and reused for every account."""
-        if block not in self._deployedAt:
-            code = retry(web3.eth.get_code, checksum(self._token["address"]), block_identifier=block)
-            self._deployedAt[block] = len(code) > 0
-        return self._deployedAt[block]
+        account, so it is fetched once per loader and reused for every account. The lock
+        makes concurrent tasks of the same token wait for that one fetch instead of each
+        asking the chain themselves."""
+        with self._deployedLock:
+            if block not in self._deployedAt:
+                code = retry(web3.eth.get_code, checksum(self._token["address"]), block_identifier=block)
+                self._deployedAt[block] = len(code) > 0
+            return self._deployedAt[block]
 
     def loadTokenMetadata(self):
         """Fill in token["decimals"] from the chain if missing and warn when the on-chain

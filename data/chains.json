@@ -2,12 +2,12 @@
   {
     "name": "Ethereum Main Net",
     "api": [
-      "https://ethereum-rpc.publicnode.com",
       "https://eth-pokt.nodies.app",
-      "https://eth.blockrazor.xyz",
       "https://rpc.mevblocker.io/fast",
-      "https://0xrpc.io/eth",
-      "https://eth.drpc.org"
+      "https://eth.drpc.org",
+      "https://ethereum-rpc.publicnode.com",
+      "https://eth.blockrazor.xyz",
+      "https://0xrpc.io/eth"
     ],
     "id": 1,
     "nativeAsset": "ETH",
@@ -186,8 +186,8 @@
     "name": "Polygon",
     "api": [
       "https://polygon.gateway.tenderly.co",
-      "https://polygon-bor-rpc.publicnode.com",
-      "https://polygon.drpc.org"
+      "https://polygon.drpc.org",
+      "https://polygon-bor-rpc.publicnode.com"
     ],
     "nativeAsset": "MATIC",
     "id": 137
@@ -195,10 +195,10 @@
   { 
     "name": "Arbitrum",
     "api": [
-      "https://arbitrum-one-rpc.publicnode.com",
-      "https://arb1.arbitrum.io/rpc",
       "https://arbitrum.drpc.org",
-      "https://arbitrum-one.public.blastapi.io"
+      "https://arbitrum-one.public.blastapi.io",
+      "https://arbitrum-one-rpc.publicnode.com",
+      "https://arb1.arbitrum.io/rpc"
     ],
     "id": 42161,
     "nativeAsset": "ETH",
@@ -230,8 +230,8 @@
     "name": "Optimism",
     "api": [
       "https://mainnet.optimism.io",
-      "https://optimism-rpc.publicnode.com",
-      "https://optimism.drpc.org"
+      "https://optimism.drpc.org",
+      "https://optimism-rpc.publicnode.com"
     ],
     "id": 10,
     "nativeAsset": "ETH",

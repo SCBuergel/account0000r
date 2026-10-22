@@ -165,3 +165,25 @@ def test_single_erc20_checks_contract_code_once_per_token(chains, monkeypatch):
         entries = [loader.analyze(a, chains[0]) for a in ("0xA", "0xB", "0xC")]
         assert [e["erc20Balance"]["balance"] for e in entries] == [balance] * 3
         assert web3.eth.codeCalls == 1
+
+    # concurrent tasks of the same token (one per worker, as in a real run) share the fetch
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    web3 = FakeWeb3(b"\x60")
+    web3.eth.get_code = lambda address, block_identifier=None, eth=web3.eth: (
+        time.sleep(0.05), setattr(eth, "codeCalls", eth.codeCalls + 1), b"\x60")[-1]
+    loader = singleErc20.load0000r(True, chains[0], token, metaLoad0000rErc20.load0000r())
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        entries = list(pool.map(lambda a: loader.analyze(a, chains[0]), ("0xA", "0xB", "0xC")))
+    assert [e["erc20Balance"]["balance"] for e in entries] == [5.0] * 3
+    assert web3.eth.codeCalls == 1
+
+
+def test_load_account_metadata_skips_chains_a_loader_does_not_apply_to(accounts, chains):
+    from load0000rs import singleErc20
+    loader = singleErc20.load0000r(True, chains[1], {"symbol": "X", "address": "0x" + "1" * 40, "decimals": 18},
+                                   metaLoad0000rErc20.load0000r())
+    calls = []
+    loader.analyze = lambda account, chain: calls.append(chain["name"])
+    account0000r.loadAccountMetadata([loader], accounts, chains, max_workers=1)
+    assert calls == ["Sidechain", "Sidechain"]

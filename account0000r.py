@@ -221,6 +221,8 @@ def loadAccountMetadata(load0000rs, accounts, chains, max_workers=10):
         for loader in load0000rs:
             for chain in chains:
                 account["chains"].setdefault(chain["name"], {})
+                if not loader.appliesTo(chain):
+                    continue
                 if loader.skipAnalysisIfEntryExists(account, chain):
                     print(f"skipping {loader.name()} for {address} on {chain['name']}, "
                           f"found entry from {loader.existingEntry(account, chain)['lastRun']}")

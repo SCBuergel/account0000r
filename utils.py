@@ -10,9 +10,14 @@ class NonArchiveRpcError(Exception):
     """The RPC endpoint cannot serve historical state (it is not an archive node)."""
 
 
+NON_ARCHIVE_MARKERS = ("missing trie node", "historical state", "archive requests require",
+                       "no state available")
+
+
 def is_non_archive_error(e):
+    """Whether an RPC error says the endpoint has pruned the state of the requested block."""
     msg = str(e).lower()
-    return "missing trie node" in msg or ("is not available" in msg and "not found" in msg)
+    return any(marker in msg for marker in NON_ARCHIVE_MARKERS)
 
 
 def ts_to_utc(timestamp):

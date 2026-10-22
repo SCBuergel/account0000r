@@ -36,6 +36,11 @@ class baseLoad0000r(ABC):
     def version(self):
         """Version string stored with every result."""
 
+    def appliesTo(self, chain):
+        """Whether analyze() has anything to do on `chain`; loaders bound to one chain
+        override this so that no task is scheduled for the others."""
+        return True
+
     @abstractmethod
     def analyze(self, account, chain):
         """Fetch data for `account` (checksummed address string) on `chain` (a dict from

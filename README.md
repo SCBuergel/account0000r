@@ -93,8 +93,11 @@ their decimals are read from the chain, you only give symbol and address.
 key there, commit it only if the repository is private.
 
 End-of-year balances need **archive** endpoints (ones that can answer "balance at block
-N" for old N). `python accounting.py 2024 0` tells you which of your endpoints qualify,
-and `python rpc_test.py` measures success rate and latency of every endpoint listed.
+N" for old N). A list may mix archive and non-archive endpoints: a non-archive one
+answers a historical query with an error and the request moves on to the next, at the
+cost of one wasted call, so list the archive endpoints first. `python accounting.py 2024 0`
+tells you whether each chain has an archive endpoint, and `python rpc_test.py` measures
+success rate and latency of every endpoint listed.
 
 ### data/assetPrices-manual.csv: prices the APIs do not know
 
@@ -124,6 +127,7 @@ python accounting.py 2024 1-6                    full run
 python accounting.py 2024 0                      only check the RPC endpoints
 python accounting.py 2024 5,6                    prices and analysis again
 python accounting.py 2024 6 --profile corporate  analysis of the "corporate" accounts
+python accounting.py 2024 4 --workers 20         balances with more parallel RPC requests (default 10)
 ```
 
 Each step writes a file that the next steps read, so you can re-run any step alone:
@@ -142,8 +146,8 @@ Step 4 keeps balances already in `data/accounts-2024.json` and only fetches the 
 a run that was interrupted or hit a dead endpoint can simply be started again. Likewise
 step 5 keeps prices already in the CSV. Delete the file to fetch everything again.
 
-If an endpoint is not an archive node, step 4 skips that chain and prints a warning
-listing the endpoint; put an archive endpoint in `chains.json` and re-run step 4. Assets
+If none of a chain's endpoints is an archive node, step 4 skips that chain and prints a
+warning listing the endpoint; put an archive endpoint in `chains.json` and re-run step 4. Assets
 without a price are listed at the end of step 6 and excluded from the total; add them to
 the manual CSV and re-run steps 5 and 6.
 
