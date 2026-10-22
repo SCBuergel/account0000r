@@ -18,6 +18,7 @@ from datetime import datetime
 from hdwallet import BIP44HDWallet
 from hdwallet.cryptocurrencies import EthereumMainnet
 
+import diagnostics
 from load0000rs import singleErc20
 from rpc import build_web3, checksum
 from utils import NonArchiveRpcError, retry, ts_to_utc
@@ -131,35 +132,68 @@ def getBlockNoFromTimestamp(chains, timestamp):
     return chains
 
 
-def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=False):
+def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=False, max_workers=5):
     """One singleErc20 loader per token of every chain.
 
-    With loadChainData=True each token's "decimals" is read from the chain and stored in
-    the chain dict (write it to a file so later runs can pass loadChainData=False).
-    Tokens without "decimals" are skipped. Returns (loaders, chains).
+    With loadChainData=True each token's "decimals" is read from the chain, in a thread
+    pool, and stored in the chain dict (write it to a file so later runs can pass
+    loadChainData=False). Each thread writes only its own token dict. Tokens without
+    "decimals" or whose metadata could not be loaded are skipped. Returns (loaders, chains).
     """
-    loaders = []
-    total = sum(len(c.get("tokens", [])) for c in chains)
-    done = 0
-    start = time.time()
-    for chain in chains:
-        for token in chain.get("tokens", []):
-            done += 1
-            label = f"[{chain['name']}] {token.get('symbol', token.get('address', '?'))}"
-            loader = singleErc20.load0000r(True, chain, token, metaLoad0000r, atBlock)
-            if loadChainData:
-                print(f"  {label}: loading token metadata ({done}/{total}, {time.time() - start:.0f}s elapsed)")
+    candidates = [(f"[{chain['name']}] {token.get('symbol', token.get('address', '?'))}",
+                   singleErc20.load0000r(True, chain, token, metaLoad0000r, atBlock))
+                  for chain in chains for token in chain.get("tokens", [])]
+    if loadChainData:
+        print(f"  loading metadata of {len(candidates)} tokens")
+        start = time.time()
+        diagnostics.reset()
+        loaded = []
+        with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
+            futures = {pool.submit(_timed, loader.loadTokenMetadata): (label, loader) for label, loader in candidates}
+            for done, future in enumerate(as_completed(futures), 1):
+                _reportIfDue(start, max_workers)
+                label, loader = futures[future]
                 try:
-                    loader.loadTokenMetadata()
+                    future.result()
                 except Exception as e:
                     print(f"  {label}: skipping, {e}")
                     continue
-            if "decimals" not in token:
-                print(f"  {label}: skipping, no decimals known (run with loadChainData=True)")
-                continue
-            loaders.append(loader)
+                print(f"  {label}: token metadata loaded ({done}/{len(candidates)}, {time.time() - start:.0f}s elapsed)")
+                loaded.append((label, loader))
+        candidates = loaded
+        _report(start, max_workers)
+    loaders = []
+    for label, loader in candidates:
+        if "decimals" not in loader._token:
+            print(f"  {label}: skipping, no decimals known (run with loadChainData=True)")
+            continue
+        loaders.append(loader)
     random.shuffle(loaders)  # spread consecutive requests across chains and endpoints
     return loaders, chains
+
+
+def _timed(func, *args):
+    """func(*args), with its wall time recorded as one loader task."""
+    started = time.time()
+    try:
+        return func(*args)
+    finally:
+        diagnostics.recordTask(time.time() - started)
+
+
+_lastReport = 0.0
+
+
+def _reportIfDue(start, workers):
+    global _lastReport
+    if time.time() - max(_lastReport, start) >= diagnostics.REPORT_EVERY:
+        _report(start, workers)
+
+
+def _report(start, workers):
+    global _lastReport
+    _lastReport = time.time()
+    print(f"[diagnostics] after {_lastReport - start:.0f}s:\n{diagnostics.report(_lastReport - start, workers)}")
 
 
 def _printNonArchiveWarning(providers):
@@ -203,10 +237,12 @@ def loadAccountMetadata(load0000rs, accounts, chains, max_workers=5):
     nonArchive = set()
     done = 0
     start = time.time()
+    diagnostics.reset()
     with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
-        futures = {pool.submit(loader.analyze, address, chain): (account, loader, chain, address)
+        futures = {pool.submit(_timed, loader.analyze, address, chain): (account, loader, chain, address)
                    for account, loader, chain, address in tasks}
         for future in as_completed(futures):
+            _reportIfDue(start, max_workers)
             account, loader, chain, address = futures[future]
             try:
                 entry = future.result()
@@ -224,6 +260,7 @@ def loadAccountMetadata(load0000rs, accounts, chains, max_workers=5):
             print(f"progress: {done}/{len(tasks)} in {elapsed:.0f}s, ~{elapsed / done * (len(tasks) - done):.0f}s "
                   f"remaining ({address} on {chain['name']}, {loader.name()})")
 
+    _report(start, max_workers)
     _printNonArchiveWarning(nonArchive)
     if errors:
         print(f"{len(errors)} errors:")

@@ -4,9 +4,7 @@
     "api": [
       "https://ethereum-rpc.publicnode.com",
       "https://eth-pokt.nodies.app",
-      "https://rpc.ankr.com/eth",
       "https://eth.blockrazor.xyz",
-      "https://eth1.lava.build",
       "https://rpc.mevblocker.io/fast",
       "https://0xrpc.io/eth",
       "https://eth.drpc.org"
@@ -182,7 +180,8 @@
     "name": "Polygon",
     "api": [
       "https://polygon.gateway.tenderly.co",
-      "https://rpc.ankr.com/polygon"
+      "https://polygon-bor-rpc.publicnode.com",
+      "https://polygon.drpc.org"
     ],
     "nativeAsset": "MATIC",
     "id": 137

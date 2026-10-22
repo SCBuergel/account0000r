@@ -86,6 +86,26 @@ def test_generate_token_loaders_skips_tokens_without_decimals(chains):
     assert [l.name() for l in loaders] == ["Single ERC20 balance DAI on Testnet"]
 
 
+def test_generate_token_loaders_loads_metadata_in_parallel_and_skips_failures(chains, monkeypatch):
+    import threading
+    from load0000rs import singleErc20
+    chains[0]["tokens"] += [{"symbol": "A", "address": "0x0000000000000000000000000000000000000002"},
+                            {"symbol": "B", "address": "0x0000000000000000000000000000000000000003"},
+                            {"symbol": "BAD", "address": "0x0000000000000000000000000000000000000004", "decimals": 6}]
+    # all three good tokens must be in loadTokenMetadata at the same time or the barrier breaks
+    barrier = threading.Barrier(3, timeout=5)
+
+    def fakeLoadTokenMetadata(self):
+        if self._token["symbol"] == "BAD":
+            raise RuntimeError("rpc down")
+        barrier.wait()
+        self._token.setdefault("decimals", 18)
+
+    monkeypatch.setattr(singleErc20.load0000r, "loadTokenMetadata", fakeLoadTokenMetadata)
+    loaders, _ = account0000r.generateTokenLoad0000rs(chains, metaLoad0000rErc20.load0000r(), loadChainData=True)
+    assert sorted(l._token["symbol"] for l in loaders) == ["A", "B", "DAI"]
+
+
 def test_write_and_read_json_roundtrip(tmp_path, accounts):
     path = account0000r.writeJson(accounts, str(tmp_path / "x.json"))
     assert account0000r.readJson(path) == accounts

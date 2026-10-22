@@ -9,10 +9,13 @@ Web3 instance built for the same chain, from any thread, continues from the same
 Always connect with build_web3(chain) rather than Web3(HTTPProvider(url)).
 """
 
+import time
+
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.providers import HTTPProvider
 
+import diagnostics
 from utils import is_non_archive_error
 
 _CURSORS = {}  # chain name -> index of the active endpoint
@@ -63,16 +66,19 @@ class FailoverHTTPProvider(HTTPProvider):
         lastError = lastResponse = nonArchiveResponse = None
         for _ in self._endpoints:
             self.endpoint_uri = self._current_uri()
+            started = time.time()
             try:
                 response = super().make_request(method, params)
             except Exception as e:
                 lastError, reason = e, type(e).__name__
             else:
                 if "error" not in response:
+                    diagnostics.recordCall(self.endpoint_uri, time.time() - started)
                     return response
                 lastResponse, reason = response, str(response["error"])[:100]
                 if is_non_archive_error(response["error"]):
                     nonArchiveResponse = nonArchiveResponse or response
+            diagnostics.recordCall(self.endpoint_uri, time.time() - started, reason)
             if len(self._endpoints) > 1:
                 print(f"[rpc failover] {self._key}: {self.endpoint_uri} failed ({reason}) "
                       f"-> switching to {self._rotate()}")

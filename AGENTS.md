@@ -11,6 +11,7 @@ networth_now.py      CLI: current net worth, reuses accounting's helpers and fil
 account0000r.py      core: derive accounts, find block by timestamp, build token loaders,
                      run loaders over accounts (thread pool), read/write JSON
 analyz0000r.py       tables and the portfolio valuation (pandas)
+diagnostics.py       timing counters fed by rpc/retry/loaders; the bottleneck report
 rpc.py               build_web3(chain): Web3 with failover across a chain's endpoints
 rpc_test.py          CLI: benchmark the endpoints in a chains file
 utils.py             retry(), NonArchiveRpcError, deep_get, ts_to_utc

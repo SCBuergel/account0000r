@@ -3,6 +3,8 @@
 import time
 from datetime import datetime, timezone
 
+import diagnostics
+
 
 class NonArchiveRpcError(Exception):
     """The RPC endpoint cannot serve historical state (it is not an archive node)."""
@@ -54,3 +56,4 @@ def retry(func, *args, max_attempts=10, max_wait=20, **kwargs):
             print(f"{func} {args} failed ({_provider_of(func)}): {e}. "
                   f"Retrying in {wait}s (attempt {attempt}/{max_attempts}).")
             time.sleep(wait)
+            diagnostics.recordBackoff(wait)

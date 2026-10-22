@@ -159,6 +159,29 @@ Needs `data/accounts-blank.json` (from accounting step 1, or hand-written) and
 `data/chains-now-tokens.json` and `data/assetPrices-now.csv`, and reuses them on the
 next run. Reused balances and prices are as old as the run that fetched them.
 
+## Why is it slow?
+
+While balances load, every 30 seconds and at the end, a `[diagnostics]` block shows where
+the worker time went:
+
+```
+[diagnostics] after 600s:
+  endpoint                                   calls  avg ms  fail  total s
+  https://polygon.gateway.tenderly.co         1800     310    12      558
+  https://ethereum-rpc.publicnode.com         2400      60     0      144
+    12x https://polygon.gateway.tenderly.co: ConnectionError
+  5 workers x 600s = 3000 worker-seconds: rpc 702s (23%), backoff 2100s (70%), other 60s (2%), idle 138s (5%)
+  3100 tasks, 0.92s each on average
+```
+
+- **backoff** is time slept between retries. A large share means an endpoint keeps
+  failing; the `Nx` lines say which and why. Replace it in `data/chains.json`.
+- **rpc** is time waiting for answers. If it dominates, use faster endpoints (the
+  `avg ms` column, or `python rpc_test.py`) or more workers: `max_workers` in
+  `account0000r.loadAccountMetadata`, default 5.
+- **other** is the tool's own work per task and should stay small.
+- **idle** only matters at the start and end of a run.
+
 ## Account files
 
 A hand-written account list has the shape of `data/accounts-blank-sample.json`:
