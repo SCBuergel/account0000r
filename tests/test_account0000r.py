@@ -38,7 +38,8 @@ def test_accounts_from_secrets_matches_known_test_vectors():
     assert accounts[10]["index"] == 1000
     assert accounts[10]["address"] == "0x58B9112fDE7979E1Fac1C4a6fbec4e4F2FB6662c"
     # deriving again into the same list adds nothing
-    assert len(account0000r.accountsFromSecrets(json.load(open("EXAMPLE-secrets.json")), accounts)) == 30
+    with open("EXAMPLE-secrets.json") as f:
+        assert len(account0000r.accountsFromSecrets(json.load(f), accounts)) == 30
 
 
 def test_load_account_metadata_stores_results_and_skips_existing(accounts, chains):

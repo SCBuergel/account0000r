@@ -20,7 +20,7 @@ data/                user data; only the samples and chains.json are tracked
 tests/, conftest.py  pytest suite, no network
 ```
 
-Setup: Python 3.11, `pip install -r requirements.txt`, then `pytest`. Run everything from
+Setup: Python 3.11 or newer, `pip install -r requirements.txt`, then `pytest`. Run everything from
 the repository root; all paths in the code are relative to it.
 
 ## Conventions

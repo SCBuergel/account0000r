@@ -1,8 +1,7 @@
 hdwallet==2.2.1
-numpy>=1.19.5,<2
-pandas==2.0.0
-requests==2.28.2
+pandas>=2.0
+requests
 setuptools<70
-tabulate==0.9.0
+tabulate
 web3==6.2.0
 pytest
