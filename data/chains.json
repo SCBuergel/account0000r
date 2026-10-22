@@ -133,7 +133,10 @@
   },
   {
     "name": "Gnosis Chain",
-    "api": "https://rpc.gnosischain.com",
+    "api": [
+      "https://rpc.gnosischain.com",
+      "https://gnosis-rpc.publicnode.com"
+    ],
     "id": 100,
     "nativeAsset": "xDAI",
     "tokens":
@@ -172,7 +175,10 @@
   },
   {
     "name": "BNB Smart Chain",
-    "api": "https://bsc-rpc.publicnode.com",
+    "api": [
+      "https://bsc-rpc.publicnode.com",
+      "https://bsc-dataseed.bnbchain.org"
+    ],
     "id": 56,
     "nativeAsset": "BNB"
   },
@@ -188,7 +194,12 @@
   },
   { 
     "name": "Arbitrum",
-    "api": "https://arbitrum-one.public.blastapi.io",
+    "api": [
+      "https://arbitrum-one-rpc.publicnode.com",
+      "https://arb1.arbitrum.io/rpc",
+      "https://arbitrum.drpc.org",
+      "https://arbitrum-one.public.blastapi.io"
+    ],
     "id": 42161,
     "nativeAsset": "ETH",
     "tokens":
@@ -217,7 +228,11 @@
   },
   { 
     "name": "Optimism",
-    "api": "https://mainnet.optimism.io",
+    "api": [
+      "https://mainnet.optimism.io",
+      "https://optimism-rpc.publicnode.com",
+      "https://optimism.drpc.org"
+    ],
     "id": 10,
     "nativeAsset": "ETH",
     "tokens":

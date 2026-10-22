@@ -1,6 +1,6 @@
 """End-of-year (EOY) portfolio accounting, one step at a time.
 
-    python accounting.py <year> <steps> [--profile NAME]
+    python accounting.py <year> <steps> [--profile NAME] [--workers N]
 
 Steps, in pipeline order (each reads the files the earlier steps wrote):
     0  check that every chain's RPC works and is an archive node
@@ -38,9 +38,10 @@ ACCOUNTS_BLANK_FILE = "data/accounts-blank.json"
 class Context:
     """The year being processed, the profile filter, and the files of that year."""
 
-    def __init__(self, year, profile):
+    def __init__(self, year, profile, workers=10):
         self.year = year
         self.profile = profile
+        self.workers = workers  # parallel RPC requests in steps 3 and 4
         self.chainsBlocksFile = f"data/chains-{year}-blocks.json"
         self.chainsTokensFile = f"data/chains-{year}-tokens.json"
         self.accountsFile = f"data/accounts-{year}.json"
@@ -114,7 +115,7 @@ def step3_load_token_metadata(ctx):
     requireFile(ctx.chainsBlocksFile, "run step 2 first")
     chains = account0000r.readJson(ctx.chainsBlocksFile)
     _, chains = account0000r.generateTokenLoad0000rs(chains, metaLoad0000rErc20.load0000r(),
-                                                     loadChainData=True, atBlock=True)
+                                                     loadChainData=True, atBlock=True, max_workers=ctx.workers)
     account0000r.writeJson(chains, ctx.chainsTokensFile)
     print(f"step3: token metadata written to {ctx.chainsTokensFile}")
 
@@ -133,7 +134,7 @@ def step4_load_eoy_balances(ctx):
     erc20Loaders, chains = account0000r.generateTokenLoad0000rs(chains, metaLoad0000rErc20.load0000r(),
                                                                 loadChainData=False, atBlock=True)
     loaders = [ethBalance.load0000r(atBlock=True, skipAnalysisIfEntryExists=True), *erc20Loaders]
-    accounts, errors = account0000r.loadAccountMetadata(loaders, accounts, chains)
+    accounts, errors = account0000r.loadAccountMetadata(loaders, accounts, chains, max_workers=ctx.workers)
     account0000r.writeJson(accounts, ctx.accountsFile)
     print(f"step4: balances written to {ctx.accountsFile}" + (f", {len(errors)} errors (see above)" if errors else ""))
 
@@ -196,12 +197,15 @@ def main():
     parser.add_argument("--profile", default="personal",
                         help="only analyse accounts with this profile (default: personal); "
                              "accounts without a profile are always included")
+    parser.add_argument("--workers", type=int, default=10,
+                        help="parallel RPC requests while loading balances (default: 10); "
+                             "lower it if endpoints answer 429, raise it while the diagnostics show rpc near 100%%")
     args = parser.parse_args()
     try:
         steps = parseSteps(args.steps)
     except ValueError as e:
         parser.error(str(e))
-    ctx = Context(args.year, args.profile)
+    ctx = Context(args.year, args.profile, args.workers)
     for n in steps:
         desc, fn = STEPS[n]
         print(f"\n{'-' * 60}\n  step {n}: {desc} (year={ctx.year})\n{'-' * 60}\n")

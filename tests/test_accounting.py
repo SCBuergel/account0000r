@@ -15,3 +15,5 @@ def test_context_paths_are_per_year():
     ctx = accounting.Context(2024, "personal")
     assert ctx.accountsFile == "data/accounts-2024.json"
     assert ctx.pricesFile == "data/assetPrices-2024.csv"
+    assert ctx.workers == 10
+    assert accounting.Context(2024, "personal", workers=3).workers == 3

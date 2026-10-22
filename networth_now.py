@@ -1,6 +1,6 @@
 """Current net worth of all accounts: today's balances at today's prices.
 
-    python networth_now.py [--refresh] [--profile NAME]
+    python networth_now.py [--refresh] [--profile NAME] [--workers N]
 
 Reads data/accounts-blank.json (written by `accounting.py <year> 1`) and data/chains.json,
 then prints the portfolio and writes data/*_values.csv like accounting.py step 6.
@@ -31,6 +31,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--refresh", action="store_true", help="fetch everything again instead of reusing cached files")
     parser.add_argument("--profile", default=None, help="only analyse accounts with this profile (default: all)")
+    parser.add_argument("--workers", type=int, default=10,
+                        help="parallel RPC requests while loading balances (default: 10); "
+                             "lower it if endpoints answer 429, raise it while the diagnostics show rpc near 100%%")
     args = parser.parse_args()
     reuse = not args.refresh
 
@@ -45,11 +48,12 @@ def main():
                     and os.path.getmtime(CHAINS_TOKENS_FILE) >= os.path.getmtime(CHAINS_FILE))
     chains = account0000r.readJson(CHAINS_TOKENS_FILE if tokensCached else CHAINS_FILE)
     erc20Loaders, chains = account0000r.generateTokenLoad0000rs(
-        chains, metaLoad0000rErc20.load0000r(), loadChainData=not tokensCached, atBlock=False)
+        chains, metaLoad0000rErc20.load0000r(), loadChainData=not tokensCached, atBlock=False,
+        max_workers=args.workers)
     account0000r.writeJson(chains, CHAINS_TOKENS_FILE)
 
     loaders = [ethBalance.load0000r(atBlock=False, skipAnalysisIfEntryExists=reuse), *erc20Loaders]
-    accounts, _errors = account0000r.loadAccountMetadata(loaders, accounts, chains)
+    accounts, _errors = account0000r.loadAccountMetadata(loaders, accounts, chains, max_workers=args.workers)
     account0000r.writeJson(accounts, ACCOUNTS_FILE)
     print(f"balances written to {ACCOUNTS_FILE}")
 

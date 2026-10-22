@@ -130,3 +130,38 @@ def test_write_json_default_name_uses_the_time_of_the_call(tmp_path, monkeypatch
     assert account0000r.writeJson([]) == "data/accounts-2025-01-01--00-00-00.json"
     FakeDatetime.stamp = "2025-06-01--12-00-00"
     assert account0000r.writeJson([]) == "data/accounts-2025-06-01--12-00-00.json"
+
+
+def test_single_erc20_checks_contract_code_once_per_token(chains, monkeypatch):
+    from load0000rs import singleErc20
+
+    class FakeCall:
+        def __init__(self, value):
+            self.value = value
+
+        def call(self, block_identifier=None):
+            return self.value
+
+    class FakeEth:
+        def __init__(self, code):
+            self.code, self.codeCalls = code, 0
+
+        def get_code(self, address, block_identifier=None):
+            self.codeCalls += 1
+            return self.code
+
+        def contract(self, address, abi):
+            return type("C", (), {"functions": type("F", (), {"balanceOf": lambda a: FakeCall(5 * 10 ** 18)})})
+
+    class FakeWeb3:
+        def __init__(self, code):
+            self.eth = FakeEth(code)
+
+    token = chains[0]["tokens"][0]
+    for code, balance in [(b"\x60", 5.0), (b"", 0)]:
+        web3 = FakeWeb3(code)
+        monkeypatch.setattr(singleErc20, "build_web3", lambda chain: web3)
+        loader = singleErc20.load0000r(True, chains[0], token, metaLoad0000rErc20.load0000r())
+        entries = [loader.analyze(a, chains[0]) for a in ("0xA", "0xB", "0xC")]
+        assert [e["erc20Balance"]["balance"] for e in entries] == [balance] * 3
+        assert web3.eth.codeCalls == 1

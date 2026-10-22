@@ -152,6 +152,7 @@ the manual CSV and re-run steps 5 and 6.
 ```
 python networth_now.py                 reuse balances and prices from the last run
 python networth_now.py --refresh       fetch everything again
+python networth_now.py --workers 20    more parallel RPC requests (default 10)
 ```
 
 Needs `data/accounts-blank.json` (from accounting step 1, or hand-written) and
@@ -167,18 +168,18 @@ the worker time went:
 ```
 [diagnostics] after 600s:
   endpoint                                   calls  avg ms  fail  total s
-  https://polygon.gateway.tenderly.co         1800     310    12      558
-  https://ethereum-rpc.publicnode.com         2400      60     0      144
+  https://polygon.gateway.tenderly.co         3600     310    12     1116
+  https://ethereum-rpc.publicnode.com         6400      60     0      384
     12x https://polygon.gateway.tenderly.co: ConnectionError
-  5 workers x 600s = 3000 worker-seconds: rpc 702s (23%), backoff 2100s (70%), other 60s (2%), idle 138s (5%)
-  3100 tasks, 0.92s each on average
+  10 workers x 600s = 6000 worker-seconds: rpc 1500s (25%), backoff 4200s (70%), other 188s (3%), idle 112s (2%)
+  6400 tasks, 0.92s each on average
 ```
 
 - **backoff** is time slept between retries. A large share means an endpoint keeps
   failing; the `Nx` lines say which and why. Replace it in `data/chains.json`.
-- **rpc** is time waiting for answers. If it dominates, use faster endpoints (the
-  `avg ms` column, or `python rpc_test.py`) or more workers: `max_workers` in
-  `account0000r.loadAccountMetadata`, default 5.
+- **rpc** is time waiting for answers. If it dominates and idle is near zero, raise
+  `--workers` (default 10) until endpoints start answering 429, or use faster endpoints
+  (the `avg ms` column, or `python rpc_test.py`).
 - **other** is the tool's own work per task and should stay small.
 - **idle** only matters at the start and end of a run.
 

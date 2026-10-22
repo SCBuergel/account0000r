@@ -23,6 +23,7 @@ class load0000r(baseLoad0000r):
         self._token = token
         self._atBlock = atBlock
         self._metaLoad0000r = metaLoad0000r
+        self._deployedAt = {}  # block -> whether the token contract has code there
 
     def name(self):
         suffix = " atBlock" if self._atBlock else ""
@@ -39,9 +40,7 @@ class load0000r(baseLoad0000r):
             return None
         block = targetBlock(chain, self._atBlock)
         web3 = build_web3(chain)
-        # a token contract that did not exist yet at `block` would make balanceOf revert
-        code = retry(web3.eth.get_code, checksum(self._token["address"]), block_identifier=block)
-        if len(code) > 0:
+        if self._isDeployed(web3, block):
             raw = retry(self._contract(web3).functions.balanceOf(account).call, block_identifier=block)
             balance = raw / 10 ** self._token["decimals"]
         else:
@@ -50,6 +49,15 @@ class load0000r(baseLoad0000r):
         entry = self.createEmptyAccountEntry()
         entry["erc20Balance"] = {"symbol": self._token["symbol"], "balance": balance}
         return entry
+
+    def _isDeployed(self, web3, block):
+        """Whether the token contract has code at `block`; balanceOf on a contract that
+        did not exist yet would revert. Depends on the token and block only, not on the
+        account, so it is fetched once per loader and reused for every account."""
+        if block not in self._deployedAt:
+            code = retry(web3.eth.get_code, checksum(self._token["address"]), block_identifier=block)
+            self._deployedAt[block] = len(code) > 0
+        return self._deployedAt[block]
 
     def loadTokenMetadata(self):
         """Fill in token["decimals"] from the chain if missing and warn when the on-chain

@@ -132,7 +132,7 @@ def getBlockNoFromTimestamp(chains, timestamp):
     return chains
 
 
-def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=False, max_workers=5):
+def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=False, max_workers=10):
     """One singleErc20 loader per token of every chain.
 
     With loadChainData=True each token's "decimals" is read from the chain, in a thread
@@ -206,7 +206,7 @@ def _printNonArchiveWarning(providers):
         print("=" * 70 + "\n")
 
 
-def loadAccountMetadata(load0000rs, accounts, chains, max_workers=5):
+def loadAccountMetadata(load0000rs, accounts, chains, max_workers=10):
     """Run every loader for every account on every chain and store the results in the
     account dicts. Returns (accounts, errors); errors is a list of message strings.
 
