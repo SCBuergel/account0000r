@@ -11,6 +11,7 @@ import csv
 import os
 from datetime import datetime, timezone
 
+import diagnostics
 from priceLoad0000rs import aliases, chainlink, coingecko, cryptocompare, manual, stable, uniswap
 from load0000rs import metaLoad0000rErc20
 
@@ -22,7 +23,8 @@ def eoyTimestamp(year):
 
 def collectSymbols(accounts, chains):
     """Sorted upper-case symbols of every chain's native asset and of every ERC-20 token
-    with a non-zero balance in `accounts`."""
+    with a non-zero balance in `accounts`, plus what the held aliases wrap (wxHOPR needs
+    HOPR priced even when no account holds HOPR itself)."""
     symbols = {c["nativeAsset"].upper() for c in chains if c.get("nativeAsset")}
     for account in accounts:
         for chainData in account.get("chains", {}).values():
@@ -30,6 +32,7 @@ def collectSymbols(accounts, chains):
                 token = entry.get("erc20Balance", {})
                 if token.get("balance", 0) > 0 and token.get("symbol"):
                     symbols.add(token["symbol"].upper())
+    symbols |= {aliases.DEFAULT_ALIASES[s] for s in symbols if s in aliases.DEFAULT_ALIASES}
     return sorted(symbols)
 
 
@@ -47,6 +50,7 @@ def defaultPriceLoaders(manualCsv, chains, cacheCsv=None):
 def loadAssetPrices(symbols, timestamp, loaders):
     """symbol -> USD price for every symbol some loader could price. Unpriced symbols are
     printed as a warning and left out."""
+    diagnostics.startPhase("prices")
     prices = {}
     remaining = list(symbols)
     for loader in loaders:
@@ -57,6 +61,7 @@ def loadAssetPrices(symbols, timestamp, loaders):
         prices.update(fetched)
         for sym, price in sorted(fetched.items()):
             print(f"  {sym}: ${price:,.4f}")
+    diagnostics.endPhase(errors=len(remaining))
     if remaining:
         print(f"\nWARNING: no price for {len(remaining)} asset(s): {remaining}\n"
               f"  Add them to the manual price CSV and re-run.")

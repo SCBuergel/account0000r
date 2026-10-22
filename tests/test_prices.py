@@ -26,6 +26,9 @@ def test_eoy_timestamp():
 
 def test_collect_symbols(accounts, chains):
     assert prices.collectSymbols(accounts, chains) == ["DAI", "ETH", "XDAI"]
+    accounts[1]["chains"]["Testnet"]["ERC20 balances"] = {
+        "Single ERC20 balance wxHOPR on Testnet": {"erc20Balance": {"symbol": "wxHOPR", "balance": 1.0}}}
+    assert prices.collectSymbols(accounts, chains) == ["DAI", "ETH", "HOPR", "WXHOPR", "XDAI"]
 
 
 def test_loaders_are_tried_in_order_and_aliases_use_resolved_prices():

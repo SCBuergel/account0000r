@@ -87,6 +87,19 @@ def listAllNonDustBalances(accounts, chains, dust=0, atBlock=False):
     return pd.DataFrame(rows, columns=["Address", "Chain", "Balance", "Asset"])
 
 
+def _describeAddresses(byAddress, accounts):
+    """The per-address value Series as a DataFrame with the account's Mnemonic (its
+    description), Index and, when any account has one, Use and Profile, in front of Value."""
+    info = {a["address"]: a for a in accounts}
+    table = byAddress.rename("Value").to_frame()
+    columns = [("Mnemonic", "mnemonic"), ("Index", "index"), ("Use", "use"), ("Profile", "profile")]
+    for column, field in columns:
+        values = [info.get(addr, {}).get(field, "") for addr in table.index]
+        if field in ("mnemonic", "index") or any(v != "" for v in values):
+            table.insert(len(table.columns) - 1, column, values)
+    return table
+
+
 def readPrices(assetPricesCsv):
     """Asset -> USD price Series from an Asset,Price CSV; empty if the file is missing."""
     if not os.path.exists(assetPricesCsv):
@@ -132,8 +145,9 @@ def portfolioValue(accounts, chains, atBlock=False, assetPricesCsv="data/assetPr
     print(byAsset.assign(Balance=byAsset["Balance"].map("{:,.2f}".format),
                          Value=byAsset["Value"].map("${:,.2f}".format)).to_string())
 
+    byAddress = _describeAddresses(byAddress, accounts)
     print("\nAccounts by total value:")
-    print(byAddress.map("${:,.2f}".format).to_string())
+    print(byAddress.assign(Value=byAddress["Value"].map("${:,.2f}".format)).to_string())
 
     print(f"\nTotal portfolio value (priced assets only): ${balances['Value'].sum():,.2f}")
     unpriced = sorted(balances.loc[balances["Price"].isna(), "Asset"].unique())

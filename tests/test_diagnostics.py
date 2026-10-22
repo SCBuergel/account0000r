@@ -4,7 +4,7 @@ from test_account0000r import CountingLoader
 
 
 def test_report_breaks_worker_time_down_by_endpoint_and_cause():
-    diagnostics.reset()
+    diagnostics.startPhase("test", 2)
     diagnostics.recordCall("http://fast.invalid", 0.1)
     diagnostics.recordCall("http://slow.invalid", 0.9, reason="Unauthorized")
     diagnostics.recordCall("http://slow.invalid", 1.0)
@@ -33,7 +33,7 @@ def test_rpc_calls_and_backoff_are_recorded(monkeypatch):
     import utils
     from web3.providers import HTTPProvider
 
-    diagnostics.reset()
+    diagnostics.startPhase("test", 2)
     monkeypatch.setattr(HTTPProvider, "make_request", lambda self, m, p: {"result": "0x1"})
     rpc.build_web3({"name": "Diag", "api": "http://only.invalid"}).provider.make_request("eth_blockNumber", [])
     monkeypatch.setattr(utils.time, "sleep", lambda s: None)
@@ -44,3 +44,22 @@ def test_rpc_calls_and_backoff_are_recorded(monkeypatch):
         pass
     text = diagnostics.report(elapsed=1.0, workers=1)
     assert "http://only.invalid" in text and "backoff 1s" in text
+
+
+def test_summary_lists_every_phase_and_the_whole_run(accounts, chains, capsys):
+    diagnostics.endPhase()  # a phase left open by an earlier test
+    for runState in (diagnostics._phases, diagnostics._runCalls, diagnostics._runErrors):
+        runState.clear()  # phases recorded by earlier tests
+    diagnostics.startPhase("first", 3)
+    diagnostics.recordCall("http://x.invalid", 0.5, reason="HTTPError")
+    diagnostics.recordTask(1.0)
+    diagnostics.endPhase(errors=1)
+    account0000r.loadAccountMetadata([CountingLoader()], accounts, chains, max_workers=2)
+    diagnostics.recordCall("http://x.invalid", 0.1)  # outside any phase, still part of the run
+    text = diagnostics.summary()
+    lines = text.splitlines()
+    assert lines[0].startswith("[run summary] ")
+    assert lines[2].split() == ["first", "0s", "3", "1", "1", "1", "0s", "1"]
+    assert lines[3].split()[0:1] + lines[3].split()[2:4] == ["balances", "2", "4"]
+    assert any(l.split()[:2] == ["http://x.invalid", "2"] for l in lines)
+    assert "1x http://x.invalid: HTTPError" in text

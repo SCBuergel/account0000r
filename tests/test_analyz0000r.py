@@ -24,6 +24,15 @@ def test_portfolio_value(tmp_path, accounts, chains, capsys):
     assert "Total portfolio value (priced assets only): $5,100.00" in out
     assert "XDAI" in out  # configured but unheld assets are listed with a zero
     assert pd.read_csv(tmp_path / "asset_values.csv")["Asset"].tolist()[:2] == ["ETH", "DAI"]
+    # the per-address table says whose account each address is
+    byAddress = pd.read_csv(tmp_path / "address_values.csv")
+    assert byAddress.columns.tolist() == ["Address", "Mnemonic", "Index", "Profile", "Value"]
+    assert byAddress.iloc[0].tolist()[:3] == [accounts[0]["address"], "alice", 0]
+    assert "Use" not in out  # no account has a use
+
+    accounts[1]["use"] = "cold storage"
+    analyz0000r.portfolioValue(accounts, chains, assetPricesCsv=str(pricesCsv), storeCsv=False)
+    assert "cold storage" in capsys.readouterr().out
 
 
 def test_portfolio_value_without_prices_or_balances(tmp_path, chains, capsys):

@@ -17,6 +17,7 @@ import os
 import time
 
 import account0000r
+import diagnostics
 import analyz0000r
 from accounting import ACCOUNTS_BLANK_FILE, CHAINS_FILE, MANUAL_PRICES_FILE, requireFile
 from load0000rs import ethBalance, metaLoad0000rErc20
@@ -64,6 +65,7 @@ def main():
 
     accounts = account0000r.filterByProfile(accounts, args.profile)
     analyz0000r.portfolioValue(accounts, chains, atBlock=False, assetPricesCsv=PRICES_FILE)
+    print(f"\n{diagnostics.summary()}")
 
 
 if __name__ == "__main__":

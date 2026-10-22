@@ -23,6 +23,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import account0000r
+import diagnostics
 import analyz0000r
 from load0000rs import ethBalance, metaLoad0000rErc20
 from priceLoad0000rs import collectSymbols, defaultPriceLoaders, eoyTimestamp, exportPrices, loadAssetPrices
@@ -211,7 +212,7 @@ def main():
         desc, fn = STEPS[n]
         print(f"\n{'-' * 60}\n  step {n}: {desc} (year={ctx.year})\n{'-' * 60}\n")
         fn(ctx)
-    print(f"\nDone, ran {len(steps)} step(s).")
+    print(f"\n{diagnostics.summary()}\nDone, ran {len(steps)} step(s).")
 
 
 if __name__ == "__main__":

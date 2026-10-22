@@ -210,6 +210,10 @@ the worker time went:
 - **other** is the tool's own work per task and should stay small.
 - **idle** only matters at the start and end of a run.
 
+Both commands end with a `[run summary]`: one line per phase (token metadata, balances,
+prices) with its time, workers, tasks, RPC calls, failed calls, back-off and errors,
+then the endpoint table for the whole run.
+
 ## Account files
 
 A hand-written account list has the shape of `data/accounts-blank-sample.json`:

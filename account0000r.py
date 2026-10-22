@@ -167,7 +167,7 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=F
     if loadChainData:
         print(f"  loading metadata of {len(candidates)} tokens")
         start = time.time()
-        diagnostics.reset()
+        diagnostics.startPhase("token metadata", max_workers)
         loaded = []
         with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
             futures = {pool.submit(_timed, loader.loadTokenMetadata): (label, loader) for label, loader in candidates}
@@ -181,8 +181,9 @@ def generateTokenLoad0000rs(chains, metaLoad0000r, loadChainData=True, atBlock=F
                     continue
                 print(f"  {label}: token metadata loaded ({done}/{len(candidates)}, {time.time() - start:.0f}s elapsed)")
                 loaded.append((label, loader))
-        candidates = loaded
         _report(start, max_workers)
+        diagnostics.endPhase(errors=len(candidates) - len(loaded))
+        candidates = loaded
     loaders = []
     for label, loader in candidates:
         if "decimals" not in loader._token:
@@ -260,7 +261,7 @@ def loadAccountMetadata(load0000rs, accounts, chains, max_workers=10):
     nonArchive = set()
     done = 0
     start = time.time()
-    diagnostics.reset()
+    diagnostics.startPhase("balances", max_workers)
     with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
         futures = {pool.submit(_timed, loader.analyze, address, chain): (account, loader, chain, address)
                    for account, loader, chain, address in tasks}
@@ -284,6 +285,7 @@ def loadAccountMetadata(load0000rs, accounts, chains, max_workers=10):
                   f"remaining ({address} on {chain['name']}, {loader.name()})")
 
     _report(start, max_workers)
+    diagnostics.endPhase(errors=len(errors))
     _printNonArchiveWarning(nonArchive)
     if errors:
         print(f"{len(errors)} errors:")
