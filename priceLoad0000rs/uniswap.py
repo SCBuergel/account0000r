@@ -55,7 +55,7 @@ class load0000r(basePriceLoad0000r):
         symbols, decimals = [], []
         for token in tokens:
             erc20 = web3.eth.contract(address=token, abi=ERC20_ABI)
-            symbols.append(retry(erc20.functions.symbol().call).upper())
+            symbols.append(erc20.functions.symbol().call().upper())  # no retry: bytes32 symbols never decode
             decimals.append(retry(erc20.functions.decimals().call))
         if sorted(symbols) != sorted([symbol, quote]):
             print(f"[uniswap] {symbol}: pair {address} holds {symbols}, expected {[symbol, quote]}")

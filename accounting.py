@@ -140,9 +140,9 @@ def step4_load_eoy_balances(ctx):
 
 
 def step5_load_eoy_prices(ctx):
-    """Prices already in the year's price file are kept; only new symbols hit the APIs.
-    Delete the price file to fetch everything again. Add assets the APIs do not know to
-    MANUAL_PRICES_FILE."""
+    """Prices already in the year's price file are kept; only new symbols are fetched
+    (on-chain sources first, then the APIs). Delete the price file to fetch everything
+    again. Add assets no source knows to MANUAL_PRICES_FILE."""
     requireFile(ctx.accountsFile, "run step 4 first")
     requireFile(ctx.chainsTokensFile, "run step 3 first")
     chains = account0000r.readJson(ctx.chainsTokensFile)

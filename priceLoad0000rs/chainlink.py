@@ -67,7 +67,7 @@ class load0000r(basePriceLoad0000r):
         contract = build_web3(chain).eth.contract(address=checksum(address), abi=FEED_ABI)
         decimals = retry(contract.functions.decimals().call, block_identifier=block)
         _, answer, _, updatedAt, _ = retry(contract.functions.latestRoundData().call, block_identifier=block)
-        if answer <= 0 or (block != "latest" and timestamp - updatedAt > MAX_AGE):
+        if answer <= 0 or timestamp - updatedAt > MAX_AGE:  # a dead feed repeats its last answer forever
             print(f"[chainlink] {symbol}: feed answer {answer} from {ts_to_utc(updatedAt)} not usable")
             return None
         return answer / 10 ** decimals

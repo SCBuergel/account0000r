@@ -2,6 +2,8 @@
 
 import time
 
+import pytest
+
 import account0000r
 from priceLoad0000rs import chainlink, stable, uniswap
 
@@ -15,18 +17,19 @@ def test_block_at_timestamp(chains, monkeypatch):
     assert account0000r.blockAtTimestamp(chains[0], int(time.time())) == "latest"
     assert account0000r.blockAtTimestamp(chains[0], 1735689600) == 12345  # stored by step 2
 
-    class Block(dict):
-        number = None
+    class Block(dict):  # web3 blocks allow both block["timestamp"] and block.timestamp
+        __getattr__ = dict.__getitem__
 
     class FakeEth:  # block n was mined at second 10 * n; latest is block 100
         def get_block(self, n):
-            block = Block(timestamp=10 * (100 if n == "latest" else n))
-            block.number = 100 if n == "latest" else n
-            return block
+            n = 100 if n == "latest" else n
+            return Block(timestamp=10 * n, number=n)
 
     monkeypatch.setattr(account0000r, "build_web3", lambda chain: type("W", (), {"eth": FakeEth()})())
     assert account0000r.blockAtTimestamp(chains[1], 555) == 55
     assert chains[1]["metadata"]["blockNumberByTimestamp"] == {"timestamp": 555, "blockNumber": 55}
+    with pytest.raises(ValueError):
+        account0000r.blockAtTimestamp(chains[1], 5000)  # after the latest block
 
 
 class FakeFunction:
@@ -64,6 +67,11 @@ def test_chainlink_scales_by_decimals_and_rejects_stale_answers(chains, monkeypa
     prices, missing = loader.load(["ETH", "OLD", "FAR", "XYZ"], eoy)
     assert prices == {"ETH": 3334.12345678}
     assert missing == ["OLD", "FAR", "XYZ"]
+    # a dead feed repeats its last answer at "latest" too and must be rejected there as well
+    now = int(time.time())
+    contracts[chainlink.checksum("0x" + "a" * 40)] = FakeContract({"decimals": 8, "latestRoundData": (1, 10 ** 8, 0, now - 3600, 1)})
+    contracts[chainlink.checksum("0x" + "b" * 40)] = FakeContract({"decimals": 8, "latestRoundData": (1, 10 ** 8, 0, now - 400 * 86400, 1)})
+    assert loader.load(["ETH", "OLD"], now) == ({"ETH": 1.0}, ["OLD"])
 
 
 def test_uniswap_prices_from_reserves_in_the_quote_token(chains, monkeypatch):

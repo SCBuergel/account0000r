@@ -118,6 +118,8 @@ def blockAtTimestamp(chain, timestamp):
         return stored["blockNumber"]
     web3 = build_web3(chain)
     latest = retry(web3.eth.get_block, "latest")
+    if timestamp > latest.timestamp:
+        raise ValueError(f"{chain['name']}: {ts_to_utc(timestamp)} is after the latest block")
     print(f"  [{chain['name']}] searching the block at {ts_to_utc(timestamp)}")
     blockNo = _lastBlockBefore(web3, timestamp, 1, latest.number)
     if blockNo is None:
