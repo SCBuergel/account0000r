@@ -99,14 +99,37 @@ cost of one wasted call, so list the archive endpoints first. `python accounting
 tells you whether each chain has an archive endpoint, and `python rpc_test.py` measures
 success rate and latency of every endpoint listed.
 
-### data/assetPrices-manual.csv: prices the APIs do not know
+### Where prices come from
 
-An `Asset,Price` CSV in USD for tokens no price API covers (SAI, STAKE, ...). It is the
-last price source tried, so it also overrides nothing.
+Sources are tried in this order; the first price found for a symbol wins:
+
+1. the price file of an earlier run (`data/assetPrices-<year>.csv` or
+   `data/assetPrices-now.csv`), so a re-run only fetches what is new
+2. **stablecoins** at exactly 1 USD: DAI, USDC, USDC.E, USDT, XDAI
+3. **Chainlink feeds**, read on-chain through your RPC endpoints at the block of the
+   wanted date: ETH, ENS, EURE (via EUR/USD), MATIC, BNB, AAVE, UNI, CRV, MKR on
+   Ethereum, ARB on Arbitrum, GNO on Gnosis, OP on Optimism. A past date needs an
+   archive endpoint for that chain, like the balances do.
+4. **Uniswap pools**, also on-chain, for tokens without a feed: HOPR from the HOPR/DAI
+   pair on Ethereum
+5. **aliases**: wrapped and bridged tokens at the price of what they wrap (WETH and
+   stETH as ETH, xHOPR and wxHOPR as HOPR, ...)
+6. the CryptoCompare and CoinGecko APIs, see the keys below
+7. `data/assetPrices-manual.csv`
+
+The on-chain sources need no key and send nothing but the RPC calls the balance loaders
+make anyway. To price another token, add a feed address from https://data.chain.link/feeds
+to `FEEDS` in `priceLoad0000rs/chainlink.py`, or the most liquid Uniswap V2 pair to
+`POOLS` in `priceLoad0000rs/uniswap.py`.
+
+### data/assetPrices-manual.csv: prices nothing else knows
+
+An `Asset,Price` CSV in USD for tokens no source covers (SAI, STAKE, ...). It is the last
+price source tried, so it also overrides nothing.
 
 ### Price API keys (optional)
 
-Prices come from CryptoCompare and CoinGecko. Set these environment variables if needed:
+Set these environment variables if the on-chain sources do not cover your assets:
 
 - `CRYPTOCOMPARE_API_KEY`: CryptoCompare requires a key since 2025 (free at
   https://developers.coindesk.com/). Without it the source is skipped.
@@ -238,8 +261,9 @@ analyz0000r.tabulateNonZeroNonce(accounts)   # grid of the accounts that ever se
 
 **A new price source** subclasses `priceLoad0000rs/base.py` and implements
 `fetchPrice(symbol, timestamp)` returning a USD price or `None`;
-`priceLoad0000rs/manual.py` is the shortest example. Sources are tried in order; the
-first price found wins (`priceLoad0000rs.defaultPriceLoaders` has the default order).
+`priceLoad0000rs/manual.py` is the shortest example and `priceLoad0000rs/chainlink.py`
+the on-chain one. Sources are tried in order; the first price found wins
+(`priceLoad0000rs.defaultPriceLoaders` has the default order).
 
 **A new analysis** is a function over the account list; see `analyz0000r.py`.
 

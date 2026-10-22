@@ -145,8 +145,9 @@ def step5_load_eoy_prices(ctx):
     MANUAL_PRICES_FILE."""
     requireFile(ctx.accountsFile, "run step 4 first")
     requireFile(ctx.chainsTokensFile, "run step 3 first")
-    symbols = collectSymbols(account0000r.readJson(ctx.accountsFile), account0000r.readJson(ctx.chainsTokensFile))
-    loaders = defaultPriceLoaders(MANUAL_PRICES_FILE, cacheCsv=ctx.pricesFile)
+    chains = account0000r.readJson(ctx.chainsTokensFile)
+    symbols = collectSymbols(account0000r.readJson(ctx.accountsFile), chains)
+    loaders = defaultPriceLoaders(MANUAL_PRICES_FILE, chains, cacheCsv=ctx.pricesFile)
     prices = loadAssetPrices(symbols, eoyTimestamp(ctx.year), loaders)
     exportPrices(prices, ctx.pricesFile)
     print(f"step5: {len(prices)} of {len(symbols)} prices written to {ctx.pricesFile}")

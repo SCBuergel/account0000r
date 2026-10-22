@@ -48,11 +48,11 @@ def test_manual_csv_roundtrip_and_bad_rows(tmp_path):
 
 
 def test_default_loaders_prepend_cache_only_if_it_exists(tmp_path):
-    names = [l.name() for l in prices.defaultPriceLoaders("m.csv", cacheCsv=str(tmp_path / "none.csv"))]
-    assert names == ["cryptocompare", "coingecko", "aliases", "manual"]
+    names = [l.name() for l in prices.defaultPriceLoaders("m.csv", [], cacheCsv=str(tmp_path / "none.csv"))]
+    assert names == ["stablecoins", "chainlink", "uniswap", "aliases", "cryptocompare", "coingecko", "manual"]
     cache = tmp_path / "cache.csv"
     cache.write_text("Asset,Price\n")
-    assert [l.name() for l in prices.defaultPriceLoaders("m.csv", cacheCsv=str(cache))][0] == "manual"
+    assert [l.name() for l in prices.defaultPriceLoaders("m.csv", [], cacheCsv=str(cache))][0] == "manual"
 
 
 class FakeResponse:

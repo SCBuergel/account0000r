@@ -58,7 +58,7 @@ def main():
     print(f"balances written to {ACCOUNTS_FILE}")
 
     symbols = collectSymbols(accounts, chains)
-    loaders = defaultPriceLoaders(MANUAL_PRICES_FILE, cacheCsv=PRICES_FILE if reuse else None)
+    loaders = defaultPriceLoaders(MANUAL_PRICES_FILE, chains, cacheCsv=PRICES_FILE if reuse else None)
     prices = loadAssetPrices(symbols, int(time.time()), loaders)
     exportPrices(prices, PRICES_FILE)
 

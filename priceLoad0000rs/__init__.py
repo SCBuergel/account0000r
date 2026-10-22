@@ -1,7 +1,7 @@
 """Price pipeline: collect the symbols that appear in loaded accounts, then price them
 with a list of loaders tried in order (the first price found for a symbol wins).
 
-    loaders = defaultPriceLoaders("data/assetPrices-manual.csv", cacheCsv="data/assetPrices-2024.csv")
+    loaders = defaultPriceLoaders("data/assetPrices-manual.csv", chains, cacheCsv="data/assetPrices-2024.csv")
     symbols = collectSymbols(accounts, chains)
     prices = loadAssetPrices(symbols, eoyTimestamp(2024), loaders)
     exportPrices(prices, "data/assetPrices-2024.csv")
@@ -11,7 +11,7 @@ import csv
 import os
 from datetime import datetime, timezone
 
-from priceLoad0000rs import aliases, coingecko, cryptocompare, manual
+from priceLoad0000rs import aliases, chainlink, coingecko, cryptocompare, manual, stable, uniswap
 from load0000rs import metaLoad0000rErc20
 
 
@@ -33,11 +33,14 @@ def collectSymbols(accounts, chains):
     return sorted(symbols)
 
 
-def defaultPriceLoaders(manualCsv, cacheCsv=None):
+def defaultPriceLoaders(manualCsv, chains, cacheCsv=None):
     """The standard loader order: prices cached by an earlier run (if cacheCsv exists),
-    CryptoCompare, CoinGecko, aliases of wrapped tokens, then the hand-maintained CSV."""
+    stablecoins at 1 USD, the on-chain sources (Chainlink feeds, then Uniswap pools, read
+    through the RPCs of `chains`), aliases of wrapped tokens, the price APIs, then the
+    hand-maintained CSV."""
     loaders = [manual.load0000r(cacheCsv)] if cacheCsv and os.path.exists(cacheCsv) else []
-    return loaders + [cryptocompare.load0000r(), coingecko.load0000r(), aliases.load0000r(),
+    return loaders + [stable.load0000r(), chainlink.load0000r(chains), uniswap.load0000r(chains),
+                      aliases.load0000r(), cryptocompare.load0000r(), coingecko.load0000r(),
                       manual.load0000r(manualCsv)]
 
 

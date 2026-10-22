@@ -21,7 +21,7 @@ from hdwallet.cryptocurrencies import EthereumMainnet
 import diagnostics
 from load0000rs import singleErc20
 from rpc import build_web3, checksum
-from utils import NonArchiveRpcError, retry, ts_to_utc
+from utils import NonArchiveRpcError, deep_get, retry, ts_to_utc
 
 
 def readJson(path):
@@ -105,6 +105,25 @@ def _lastBlockBefore(web3, timestamp, low, high):
         else:
             high = mid - 1
     return found
+
+
+def blockAtTimestamp(chain, timestamp):
+    """Block identifier to query `chain` as of `timestamp`: "latest" for a timestamp within
+    ten minutes of now, the block stored by getBlockNoFromTimestamp when it is for this
+    timestamp, otherwise a binary search (stored in the chain dict for the next call)."""
+    if abs(time.time() - timestamp) < 600:
+        return "latest"
+    stored = deep_get(chain, "metadata", "blockNumberByTimestamp", default={})
+    if stored.get("timestamp") == timestamp:
+        return stored["blockNumber"]
+    web3 = build_web3(chain)
+    latest = retry(web3.eth.get_block, "latest")
+    print(f"  [{chain['name']}] searching the block at {ts_to_utc(timestamp)}")
+    blockNo = _lastBlockBefore(web3, timestamp, 1, latest.number)
+    if blockNo is None:
+        raise ValueError(f"{chain['name']} has no block before {ts_to_utc(timestamp)}")
+    chain.setdefault("metadata", {})["blockNumberByTimestamp"] = {"timestamp": timestamp, "blockNumber": blockNo}
+    return blockNo
 
 
 def getBlockNoFromTimestamp(chains, timestamp):

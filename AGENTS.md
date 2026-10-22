@@ -16,7 +16,8 @@ rpc.py               build_web3(chain): Web3 with failover across a chain's endp
 rpc_test.py          CLI: benchmark the endpoints in a chains file
 utils.py             retry(), NonArchiveRpcError, deep_get, ts_to_utc
 load0000rs/          one class per fact fetched per account and chain (base.py has the contract)
-priceLoad0000rs/     one class per price source, plus the orchestration in __init__.py
+priceLoad0000rs/     one class per price source (stablecoins, chainlink and uniswap read
+                     the chain; the APIs need keys), orchestration in __init__.py
 data/                user data; only the samples and chains.json are tracked
 tests/, conftest.py  pytest suite, no network
 ```
