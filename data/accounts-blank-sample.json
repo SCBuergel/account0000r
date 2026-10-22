@@ -8,6 +8,7 @@
     "address": "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6",
     "index": 1,
     "mnemonic": "Vitalik",
-    "profile": "corporate"
+    "profile": "corporate",
+    "use": "cold storage"
   }
 ]

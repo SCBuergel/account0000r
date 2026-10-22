@@ -221,13 +221,16 @@ A hand-written account list has the shape of `data/accounts-blank-sample.json`:
 ```json
 [
   {"address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", "index": 0, "mnemonic": "Vitalik"},
-  {"address": "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6", "index": 1, "mnemonic": "Vitalik", "profile": "corporate"}
+  {"address": "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6", "index": 1, "mnemonic": "Vitalik",
+   "profile": "corporate", "use": "cold storage"}
 ]
 ```
 
-`mnemonic` and `index` group the output when you have many accounts from several
-mnemonics. After loading, each account gains a `chains` field with one entry per chain
-and, inside it, one entry per loader:
+`mnemonic` (the description from secrets.json, never the words) and `index` say which
+account of which wallet an address is; `use` is an optional free-text note, and
+`profile` is described above. All four are shown next to each address in the
+"Accounts by total value" table and `address_values.csv`. After loading, each account
+gains a `chains` field with one entry per chain and, inside it, one entry per loader:
 
 ```json
 "chains": {

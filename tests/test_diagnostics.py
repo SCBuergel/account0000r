@@ -46,10 +46,9 @@ def test_rpc_calls_and_backoff_are_recorded(monkeypatch):
     assert "http://only.invalid" in text and "backoff 1s" in text
 
 
-def test_summary_lists_every_phase_and_the_whole_run(accounts, chains, capsys):
-    diagnostics.endPhase()  # a phase left open by an earlier test
-    for runState in (diagnostics._phases, diagnostics._runCalls, diagnostics._runErrors):
-        runState.clear()  # phases recorded by earlier tests
+def test_summary_lists_every_phase_and_the_whole_run(accounts, chains):
+    diagnostics.resetRun()
+    assert diagnostics.summary().endswith("no loading phase ran")
     diagnostics.startPhase("first", 3)
     diagnostics.recordCall("http://x.invalid", 0.5, reason="HTTPError")
     diagnostics.recordTask(1.0)

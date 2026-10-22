@@ -1,4 +1,5 @@
 import priceLoad0000rs as prices
+from load0000rs import metaLoad0000rErc20
 from priceLoad0000rs import aliases, manual
 from priceLoad0000rs.base import basePriceLoad0000r
 
@@ -26,7 +27,7 @@ def test_eoy_timestamp():
 
 def test_collect_symbols(accounts, chains):
     assert prices.collectSymbols(accounts, chains) == ["DAI", "ETH", "XDAI"]
-    accounts[1]["chains"]["Testnet"]["ERC20 balances"] = {
+    accounts[1]["chains"]["Testnet"][metaLoad0000rErc20.NAME] = {
         "Single ERC20 balance wxHOPR on Testnet": {"erc20Balance": {"symbol": "wxHOPR", "balance": 1.0}}}
     assert prices.collectSymbols(accounts, chains) == ["DAI", "ETH", "HOPR", "WXHOPR", "XDAI"]
 

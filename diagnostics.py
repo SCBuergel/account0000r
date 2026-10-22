@@ -32,6 +32,8 @@ _tasks = [0, 0.0]  # [count, seconds] of loader tasks
 _runStart = time.time()
 _runCalls = defaultdict(lambda: [0, 0.0, 0])
 _runErrors = defaultdict(int)
+# phases are started and ended from the main thread only, so _phase and _phases are read
+# without the lock; the counters above are written from worker threads and need it
 _phase = None  # {"name", "start", "workers"} while a phase runs
 _phases = []  # finished phases, see endPhase()
 
@@ -88,6 +90,17 @@ def endPhase(errors=0):
         _phase = None
 
 
+def resetRun():
+    """Forget every phase and the run's endpoint totals (for tests)."""
+    global _runStart
+    endPhase()
+    with _lock:
+        _phases.clear()
+        _runCalls.clear()
+        _runErrors.clear()
+        _runStart = time.time()
+
+
 def _endpointTable(calls, errors):
     lines = [f"  {'endpoint':52} {'calls':>6} {'avg ms':>7} {'fail':>5} {'total s':>8}"]
     for endpoint, (n, seconds, failures) in sorted(calls.items(), key=lambda kv: -kv[1][1]):
@@ -108,8 +121,10 @@ def summary():
         endPhase()
     with _lock:
         phases, calls, errors = list(_phases), dict(_runCalls), dict(_runErrors)
-    lines = [f"[run summary] {_duration(time.time() - _runStart)} in total",
-             f"  {'phase':16} {'time':>7} {'workers':>7} {'tasks':>6} {'rpc calls':>9} {'failed':>6} {'backoff':>8} {'errors':>6}"]
+    lines = [f"[run summary] {_duration(time.time() - _runStart)} in total"]
+    if not phases:
+        return lines[0] + ", no loading phase ran"
+    lines.append(f"  {'phase':16} {'time':>7} {'workers':>7} {'tasks':>6} {'rpc calls':>9} {'failed':>6} {'backoff':>8} {'errors':>6}")
     for ph in phases:
         lines.append(f"  {ph['name'][:16]:16} {_duration(ph['seconds']):>7} {ph['workers']:7} {ph['tasks']:6} "
                      f"{ph['calls']:9} {ph['failed']:6} {_duration(ph['backoff']):>8} {ph['errors']:6}")
